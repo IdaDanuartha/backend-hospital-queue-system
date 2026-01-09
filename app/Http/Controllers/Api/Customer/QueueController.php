@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers\Api\Customer;
+
+use App\Http\Controllers\Controller;
+use App\Services\QueueService;
+use Illuminate\Http\Request;
+
+class QueueController extends Controller
+{
+    protected $queueService;
+
+    public function __construct(QueueService $queueService)
+    {
+        $this->queueService = $queueService;
+    }
+
+    /**
+     * Take a new queue number
+     * 
+     * @unauthenticated
+     */
+    public function takeQueue(Request $request)
+    {
+        $validated = $request->validate([
+            'queue_type_id' => 'required|exists:queue_types,id',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        try {
+            $result = $this->queueService->takeQueue(
+                $validated['queue_type_id'],
+                $validated['latitude'] ?? null,
+                $validated['longitude'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Queue taken successfully',
+                'data' => $result,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Get queue status by token
+     * 
+     * @unauthenticated
+     */
+    public function getStatus(string $token)
+    {
+        try {
+            $result = $this->queueService->getQueueStatus($token);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 404);
+        }
+    }
+}

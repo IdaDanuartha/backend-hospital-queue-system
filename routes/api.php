@@ -1,0 +1,94 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\Customer\QueueController as CustomerQueueController;
+use App\Http\Controllers\Api\Customer\InfoController;
+use App\Http\Controllers\Api\Staff\QueueController as StaffQueueController;
+use App\Http\Controllers\Api\Staff\DashboardController as StaffDashboardController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\PolyController;
+use App\Http\Controllers\Api\Admin\DoctorController;
+use App\Http\Controllers\Api\Admin\ScheduleController;
+use App\Http\Controllers\Api\Admin\QueueTypeController;
+use App\Http\Controllers\Api\Admin\StaffController;
+use App\Http\Controllers\Api\Admin\ReportController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public routes (no authentication required)
+Route::prefix('v1')->group(function () {
+    
+    // Authentication
+    Route::prefix('auth')->group(function () {
+        Route::post('login', [AuthController::class, 'login']);
+    });
+
+    // Customer - Public Queue & Info
+    Route::prefix('customer')->group(function () {
+        // Queue management
+        Route::post('queue/take', [CustomerQueueController::class, 'takeQueue']);
+        Route::get('queue/status/{token}', [CustomerQueueController::class, 'getStatus']);
+        
+        // Information
+        Route::get('info/polys', [InfoController::class, 'getPolys']);
+        Route::get('info/doctors', [InfoController::class, 'getDoctorSchedules']);
+        Route::get('info/queue-types', [InfoController::class, 'getQueueTypes']);
+    });
+});
+
+// Protected routes (requires authentication)
+Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
+    
+    // Auth routes
+    Route::prefix('auth')->group(function () {
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('logout', [AuthController::class, 'logout']);
+    });
+
+    // Staff routes
+    Route::prefix('staff')->middleware(['role:staff'])->group(function () {
+        Route::get('dashboard', [StaffDashboardController::class, 'index']);
+        
+        Route::prefix('queue')->group(function () {
+            Route::get('today', [StaffQueueController::class, 'getTodayQueues']);
+            Route::post('call-next', [StaffQueueController::class, 'callNext']);
+            Route::post('{id}/recall', [StaffQueueController::class, 'recall']);
+            Route::post('{id}/skip', [StaffQueueController::class, 'skip']);
+            Route::post('{id}/start-service', [StaffQueueController::class, 'startService']);
+            Route::post('{id}/finish-service', [StaffQueueController::class, 'finishService']);
+        });
+    });
+
+    // Admin routes
+    Route::prefix('admin')->middleware(['role:admin'])->group(function () {
+        Route::get('dashboard', [AdminDashboardController::class, 'index']);
+        
+        // Master data management
+        Route::apiResource('polys', PolyController::class);
+        Route::apiResource('doctors', DoctorController::class);
+        Route::apiResource('queue-types', QueueTypeController::class);
+        Route::apiResource('staff', StaffController::class);
+        
+        // Schedules
+        Route::prefix('schedules')->group(function () {
+            Route::post('/', [ScheduleController::class, 'store']);
+            Route::put('{id}', [ScheduleController::class, 'update']);
+            Route::delete('{id}', [ScheduleController::class, 'destroy']);
+        });
+        
+        // Reports
+        Route::prefix('reports')->group(function () {
+            Route::get('statistics', [ReportController::class, 'queueStatistics']);
+            Route::get('busiest-polys', [ReportController::class, 'busiestPolys']);
+            Route::get('busiest-hours', [ReportController::class, 'busiestHours']);
+            Route::get('daily-count', [ReportController::class, 'dailyQueueCount']);
+            Route::get('waiting-time-trend', [ReportController::class, 'waitingTimeTrend']);
+        });
+    });
+});
