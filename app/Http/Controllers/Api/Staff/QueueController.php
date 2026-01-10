@@ -26,7 +26,7 @@ class QueueController extends Controller
     public function getTodayQueues()
     {
         $staff = auth()->user()->staff;
-        
+
         if (!$staff) {
             return response()->json([
                 'success' => false,
@@ -78,7 +78,7 @@ class QueueController extends Controller
     /**
      * Recall current queue
      */
-    public function recall(int $ticketId)
+    public function recall(string $ticketId)
     {
         try {
             $staff = auth()->user()->staff;
@@ -100,7 +100,7 @@ class QueueController extends Controller
     /**
      * Skip queue
      */
-    public function skip(int $ticketId, Request $request)
+    public function skip(string $ticketId, Request $request)
     {
         $validated = $request->validate([
             'remark' => 'nullable|string',
@@ -126,7 +126,7 @@ class QueueController extends Controller
     /**
      * Start serving queue
      */
-    public function startService(int $ticketId)
+    public function startService(string $ticketId)
     {
         try {
             $staff = auth()->user()->staff;
@@ -148,7 +148,7 @@ class QueueController extends Controller
     /**
      * Finish serving queue
      */
-    public function finishService(int $ticketId, Request $request)
+    public function finishService(string $ticketId, Request $request)
     {
         $validated = $request->validate([
             'notes' => 'nullable|string',

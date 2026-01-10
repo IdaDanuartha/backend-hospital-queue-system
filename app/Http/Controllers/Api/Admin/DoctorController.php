@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreDoctorRequest;
+use App\Models\Doctor;
 use Illuminate\Http\Request;
 
 class DoctorController extends Controller
@@ -12,7 +14,16 @@ class DoctorController extends Controller
      */
     public function index(Request $request)
     {
-        $query = \App\Models\Doctor::with(['poly', 'schedules']);
+        $request->validate([
+            /**
+             * Filter berdasarkan ID poliklinik
+             * @query
+             * @example 9d4e8f12-3456-7890-abcd-ef1234567890
+             */
+            'poly_id' => 'nullable|uuid|exists:polys,id',
+        ]);
+
+        $query = Doctor::with(['poly', 'schedules']);
 
         if ($request->poly_id) {
             $query->where('poly_id', $request->poly_id);
@@ -29,16 +40,9 @@ class DoctorController extends Controller
     /**
      * Store new doctor
      */
-    public function store(Request $request)
+    public function store(StoreDoctorRequest $request)
     {
-        $validated = $request->validate([
-            'poly_id' => 'required|exists:polys,id',
-            'sip_number' => 'required|string|unique:doctors,sip_number',
-            'name' => 'required|string',
-            'specialization' => 'nullable|string',
-        ]);
-
-        $doctor = \App\Models\Doctor::create($validated);
+        $doctor = Doctor::create($request->validated());
 
         return response()->json([
             'success' => true,
@@ -50,9 +54,9 @@ class DoctorController extends Controller
     /**
      * Get doctor detail
      */
-    public function show(int $id)
+    public function show(string $id)
     {
-        $doctor = \App\Models\Doctor::with(['poly', 'schedules'])->findOrFail($id);
+        $doctor = Doctor::with(['poly', 'schedules'])->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -63,9 +67,9 @@ class DoctorController extends Controller
     /**
      * Update doctor
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
-        $doctor = \App\Models\Doctor::findOrFail($id);
+        $doctor = Doctor::findOrFail($id);
 
         $validated = $request->validate([
             'poly_id' => 'required|exists:polys,id',
@@ -86,9 +90,9 @@ class DoctorController extends Controller
     /**
      * Delete doctor
      */
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
-        $doctor = \App\Models\Doctor::findOrFail($id);
+        $doctor = Doctor::findOrFail($id);
         $doctor->delete();
 
         return response()->json([

@@ -13,7 +13,7 @@ return new class extends Migration {
     {
         Schema::create('poly_service_hours', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('poly_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('poly_id')->constrained('polys')->onDelete('cascade');
             $table->enum('day_of_week', DayOfWeek::toArray());
             $table->time('open_time');
             $table->time('close_time');

@@ -13,8 +13,8 @@ return new class extends Migration {
     {
         Schema::create('queue_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('queue_ticket_id')->constrained()->onDelete('cascade');
-            $table->foreignId('staff_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUuid('queue_ticket_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('staff_id')->nullable()->constrained()->onDelete('set null');
             $table->enum('action', QueueAction::toArray());
             $table->string('previous_status')->nullable();
             $table->string('new_status');

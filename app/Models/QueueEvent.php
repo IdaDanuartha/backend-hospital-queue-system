@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class QueueEvent extends BaseModel
 {
     protected $guarded = ["id"];
+    public $timestamps = false;
 
     protected function casts(): array
     {

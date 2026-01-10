@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('queue_types', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('poly_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUuid('poly_id')->nullable()->constrained('polys')->onDelete('set null');
             $table->string('name');
             $table->string('code_prefix', 5);
             $table->string('service_unit')->nullable();

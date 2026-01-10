@@ -44,9 +44,22 @@ class QueueTypeController extends Controller
     }
 
     /**
+     * Get queue type detail
+     */
+    public function show(string $id)
+    {
+        $queueType = \App\Models\QueueType::with('poly')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $queueType,
+        ]);
+    }
+
+    /**
      * Update queue type
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
         $queueType = \App\Models\QueueType::findOrFail($id);
 
@@ -71,7 +84,7 @@ class QueueTypeController extends Controller
     /**
      * Delete queue type
      */
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
         $queueType = \App\Models\QueueType::findOrFail($id);
         $queueType->delete();

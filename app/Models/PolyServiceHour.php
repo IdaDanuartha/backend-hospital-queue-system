@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Enums\DayOfWeek;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PolyServiceHour extends BaseModel
 {
+    use HasFactory;
+
     protected $guarded = ["id"];
 
     protected function casts(): array
@@ -18,7 +21,7 @@ class PolyServiceHour extends BaseModel
             'close_time' => 'datetime:H:i',
         ];
     }
-    
+
     public function poly(): BelongsTo
     {
         return $this->belongsTo(Poly::class);

@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Poly extends BaseModel
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
     protected $guarded = ["id"];
+
+    protected $table = 'polys';
 
     protected function casts(): array
     {

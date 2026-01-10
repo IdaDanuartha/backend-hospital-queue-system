@@ -13,7 +13,7 @@ return new class extends Migration {
     {
         Schema::create('doctor_schedules', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('doctor_id')->constrained()->onDelete('cascade');
             $table->enum('day_of_week', DayOfWeek::toArray());
             $table->time('start_time');
             $table->time('end_time');

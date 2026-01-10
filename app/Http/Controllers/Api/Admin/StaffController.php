@@ -58,9 +58,22 @@ class StaffController extends Controller
     }
 
     /**
+     * Get staff detail
+     */
+    public function show(string $id)
+    {
+        $staff = \App\Models\Staff::with(['user', 'poly'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $staff,
+        ]);
+    }
+
+    /**
      * Update staff
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
         $staff = \App\Models\Staff::findOrFail($id);
 
@@ -103,10 +116,14 @@ class StaffController extends Controller
     /**
      * Delete staff
      */
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
         $staff = \App\Models\Staff::findOrFail($id);
-        $staff->user->delete();
+        $user = $staff->user;
+
+        // Delete staff first, then user (cascade)
+        $staff->delete();
+        $user->delete();
 
         return response()->json([
             'success' => true,

@@ -31,8 +31,13 @@ class QueueService
         return DB::transaction(function () use ($queueTypeId) {
             $serviceDate = today();
             $nextNumber = $this->queueTicketRepository->getNextQueueNumber($queueTypeId, $serviceDate);
-            
+
             $queueType = \App\Models\QueueType::findOrFail($queueTypeId);
+
+            if (!$queueType->is_active) {
+                throw new \Exception('Queue type is currently inactive');
+            }
+
             $displayNumber = $queueType->code_prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
             $ticket = $this->queueTicketRepository->create([
@@ -58,10 +63,10 @@ class QueueService
     {
         return DB::transaction(function () use ($queueTypeId, $staffId) {
             $serviceDate = today();
-            
+
             // Get next waiting queue
             $nextQueue = $this->queueTicketRepository->getWaitingQueues($queueTypeId, $serviceDate)->first();
-            
+
             if (!$nextQueue) {
                 throw new \Exception('No waiting queue available');
             }
@@ -91,7 +96,7 @@ class QueueService
     {
         return DB::transaction(function () use ($ticketId, $staffId) {
             $ticket = $this->queueTicketRepository->find($ticketId);
-            
+
             if ($ticket->status !== 'CALLED') {
                 throw new \Exception('Only called queue can be recalled');
             }
@@ -132,13 +137,13 @@ class QueueService
     public function getQueueStatus($token)
     {
         $publicToken = \App\Models\PublicQueueToken::where('token', $token)->firstOrFail();
-        
+
         if ($publicToken->isExpired()) {
             throw new \Exception('Token has expired');
         }
 
         $ticket = $publicToken->queueTicket()->with(['queueType.poly'])->first();
-        
+
         // Get current queue
         $currentQueue = $this->queueTicketRepository->getCurrentQueue(
             $ticket->queue_type_id,
@@ -202,8 +207,8 @@ class QueueService
         $dLon = deg2rad($lon2 - $lon1);
 
         $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon / 2) * sin($dLon / 2);
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
 
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
@@ -213,8 +218,9 @@ class QueueService
     protected function calculateEstimatedWaitingTime($queueTypeId, $remainingQueues)
     {
         $queueType = \App\Models\QueueType::find($queueTypeId);
-        
-        if (!$queueType) return 0;
+
+        if (!$queueType)
+            return 0;
 
         return $remainingQueues * $queueType->avg_service_minutes;
     }

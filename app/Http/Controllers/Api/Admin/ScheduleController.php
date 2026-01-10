@@ -32,7 +32,7 @@ class ScheduleController extends Controller
     /**
      * Update schedule
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
         $schedule = \App\Models\DoctorSchedule::findOrFail($id);
 
@@ -55,7 +55,7 @@ class ScheduleController extends Controller
     /**
      * Delete schedule
      */
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
         $schedule = \App\Models\DoctorSchedule::findOrFail($id);
         $schedule->delete();

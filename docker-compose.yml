@@ -39,13 +39,13 @@ services:
     container_name: hospital_queue_postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
-    env_file:
-      - .env
+      - "5433:5432"
+    # env_file:
+    #   - .env
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: hospital_queue
+      POSTGRES_USER: hospital_user
+      POSTGRES_PASSWORD: hospital_pass
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql

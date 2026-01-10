@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\TakeQueueRequest;
 use App\Services\QueueService;
 use Illuminate\Http\Request;
 
@@ -20,13 +21,9 @@ class QueueController extends Controller
      * 
      * @unauthenticated
      */
-    public function takeQueue(Request $request)
+    public function takeQueue(TakeQueueRequest $request)
     {
-        $validated = $request->validate([
-            'queue_type_id' => 'required|exists:queue_types,id',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $this->queueService->takeQueue(

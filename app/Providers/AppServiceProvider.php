@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Repositories\Contracts\QueueTicketRepositoryInterface;
+use App\Repositories\Eloquent\QueueTicketRepository;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            QueueTicketRepositoryInterface::class,
+            QueueTicketRepository::class
+        );
     }
 
     /**
@@ -19,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Scramble::configure()
+            ->withDocumentTransformers(function (OpenApi $openApi) {
+                $openApi->secure(
+                    SecurityScheme::http('bearer', 'JWT')
+                );
+            });
     }
 }

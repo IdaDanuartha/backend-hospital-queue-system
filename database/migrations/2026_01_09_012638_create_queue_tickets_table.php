@@ -13,7 +13,7 @@ return new class extends Migration {
     {
         Schema::create('queue_tickets', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('queue_type_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('queue_type_id')->constrained()->onDelete('cascade');
             $table->date('service_date');
             $table->integer('queue_number');
             $table->string('display_number', 20);
@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->timestamp('called_at')->nullable();
             $table->timestamp('served_at')->nullable();
             $table->timestamp('finished_at')->nullable();
-            $table->foreignId('handled_by_staff_id')->nullable()->constrained('staff')->onDelete('set null');
+            $table->foreignUuid('handled_by_staff_id')->nullable()->constrained('staff')->onDelete('set null');
             $table->boolean('is_priority')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();

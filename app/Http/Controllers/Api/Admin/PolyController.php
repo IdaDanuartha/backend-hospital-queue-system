@@ -45,7 +45,7 @@ class PolyController extends Controller
     /**
      * Get polyclinic detail
      */
-    public function show(int $id)
+    public function show(string $id)
     {
         $poly = Poly::with(['serviceHours', 'doctors', 'queueTypes'])->findOrFail($id);
 
@@ -58,7 +58,7 @@ class PolyController extends Controller
     /**
      * Update polyclinic
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, string $id)
     {
         $poly = Poly::findOrFail($id);
 
@@ -81,7 +81,7 @@ class PolyController extends Controller
     /**
      * Delete polyclinic
      */
-    public function destroy(int $id)
+    public function destroy(string $id)
     {
         $poly = Poly::findOrFail($id);
         $poly->delete();

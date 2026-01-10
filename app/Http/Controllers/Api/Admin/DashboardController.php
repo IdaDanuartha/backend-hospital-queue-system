@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Poly;
+use App\Models\QueueTicket;
+use App\Models\QueueType;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -19,7 +21,7 @@ class DashboardController extends Controller
         $dashboard = [];
 
         foreach ($polys as $poly) {
-            $queueTypes = \App\Models\QueueType::where('poly_id', $poly->id)
+            $queueTypes = QueueType::where('poly_id', $poly->id)
                 ->active()
                 ->get();
 
@@ -33,7 +35,7 @@ class DashboardController extends Controller
             ];
 
             foreach ($queueTypes as $type) {
-                $queues = \App\Models\QueueTicket::where('queue_type_id', $type->id)
+                $queues = QueueTicket::where('queue_type_id', $type->id)
                     ->whereDate('service_date', $date)
                     ->get();
 

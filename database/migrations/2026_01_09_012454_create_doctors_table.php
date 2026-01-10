@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('doctors', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('poly_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('poly_id')->constrained('polys')->onDelete('cascade');
             $table->string('sip_number')->unique();
             $table->string('name');
             $table->string('specialization')->nullable();

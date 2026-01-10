@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Admin\ScheduleController;
 use App\Http\Controllers\Api\Admin\QueueTypeController;
 use App\Http\Controllers\Api\Admin\StaffController;
 use App\Http\Controllers\Api\Admin\ReportController;
+use App\Http\Controllers\Api\Admin\PolyServiceHourController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +23,7 @@ use App\Http\Controllers\Api\Admin\ReportController;
 
 // Public routes (no authentication required)
 Route::prefix('v1')->group(function () {
-    
+
     // Authentication
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
@@ -33,7 +34,7 @@ Route::prefix('v1')->group(function () {
         // Queue management
         Route::post('queue/take', [CustomerQueueController::class, 'takeQueue']);
         Route::get('queue/status/{token}', [CustomerQueueController::class, 'getStatus']);
-        
+
         // Information
         Route::get('info/polys', [InfoController::class, 'getPolys']);
         Route::get('info/doctors', [InfoController::class, 'getDoctorSchedules']);
@@ -43,7 +44,7 @@ Route::prefix('v1')->group(function () {
 
 // Protected routes (requires authentication)
 Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
-    
+
     // Auth routes
     Route::prefix('auth')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
@@ -54,7 +55,7 @@ Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
     // Staff routes
     Route::prefix('staff')->middleware(['role:staff'])->group(function () {
         Route::get('dashboard', [StaffDashboardController::class, 'index']);
-        
+
         Route::prefix('queue')->group(function () {
             Route::get('today', [StaffQueueController::class, 'getTodayQueues']);
             Route::post('call-next', [StaffQueueController::class, 'callNext']);
@@ -68,20 +69,27 @@ Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
     // Admin routes
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
-        
+
         // Master data management
         Route::apiResource('polys', PolyController::class);
         Route::apiResource('doctors', DoctorController::class);
         Route::apiResource('queue-types', QueueTypeController::class);
         Route::apiResource('staff', StaffController::class);
-        
+
         // Schedules
         Route::prefix('schedules')->group(function () {
             Route::post('/', [ScheduleController::class, 'store']);
             Route::put('{id}', [ScheduleController::class, 'update']);
             Route::delete('{id}', [ScheduleController::class, 'destroy']);
         });
-        
+
+        // Poly Service Hours
+        Route::prefix('poly-service-hours')->group(function () {
+            Route::post('/', [PolyServiceHourController::class, 'store']);
+            Route::put('{id}', [PolyServiceHourController::class, 'update']);
+            Route::delete('{id}', [PolyServiceHourController::class, 'destroy']);
+        });
+
         // Reports
         Route::prefix('reports')->group(function () {
             Route::get('statistics', [ReportController::class, 'queueStatistics']);

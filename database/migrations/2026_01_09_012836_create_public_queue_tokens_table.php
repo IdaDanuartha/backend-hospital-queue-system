@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('public_queue_tokens', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('queue_ticket_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('queue_ticket_id')->constrained()->onDelete('cascade');
             $table->string('token', 64)->unique();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
