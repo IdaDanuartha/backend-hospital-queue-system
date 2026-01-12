@@ -34,15 +34,15 @@ class ReportController extends Controller
 
         $statistics = $query->selectRaw('
             COUNT(*) as total_queues,
-            COUNT(CASE WHEN status = "DONE" THEN 1 END) as completed_queues,
-            COUNT(CASE WHEN status = "SKIPPED" THEN 1 END) as skipped_queues,
+            COUNT(CASE WHEN status = \'DONE\' THEN 1 END) as completed_queues,
+            COUNT(CASE WHEN status = \'SKIPPED\' THEN 1 END) as skipped_queues,
             AVG(CASE 
                 WHEN served_at IS NOT NULL AND issued_at IS NOT NULL 
-                THEN TIMESTAMPDIFF(MINUTE, issued_at, served_at) 
+                THEN EXTRACT(EPOCH FROM (served_at - issued_at)) / 60 
             END) as avg_waiting_time_minutes,
             AVG(CASE 
                 WHEN finished_at IS NOT NULL AND served_at IS NOT NULL 
-                THEN TIMESTAMPDIFF(MINUTE, served_at, finished_at) 
+                THEN EXTRACT(EPOCH FROM (finished_at - served_at)) / 60 
             END) as avg_service_time_minutes
         ')->first();
 
@@ -77,7 +77,7 @@ class ReportController extends Controller
                 'polys.id',
                 'polys.name',
                 DB::raw('COUNT(queue_tickets.id) as total_queues'),
-                DB::raw('AVG(TIMESTAMPDIFF(MINUTE, queue_tickets.issued_at, queue_tickets.served_at)) as avg_waiting_time')
+                DB::raw('AVG(EXTRACT(EPOCH FROM (queue_tickets.served_at - queue_tickets.issued_at)) / 60) as avg_waiting_time')
             )
             ->orderBy('total_queues', 'desc')
             ->get();
@@ -109,7 +109,7 @@ class ReportController extends Controller
         }
 
         $busiestHours = $query
-            ->selectRaw('HOUR(issued_at) as hour, COUNT(*) as total_queues')
+            ->selectRaw('EXTRACT(HOUR FROM issued_at) as hour, COUNT(*) as total_queues')
             ->groupBy('hour')
             ->orderBy('total_queues', 'desc')
             ->get()
@@ -182,7 +182,7 @@ class ReportController extends Controller
         $trend = $query
             ->selectRaw('
                 service_date,
-                AVG(TIMESTAMPDIFF(MINUTE, issued_at, served_at)) as avg_waiting_minutes
+                AVG(EXTRACT(EPOCH FROM (served_at - issued_at)) / 60) as avg_waiting_minutes
             ')
             ->groupBy('service_date')
             ->orderBy('service_date')

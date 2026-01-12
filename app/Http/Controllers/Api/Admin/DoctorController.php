@@ -29,7 +29,7 @@ class DoctorController extends Controller
             $query->where('poly_id', $request->poly_id);
         }
 
-        $doctors = $query->get();
+        $doctors = $query->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -56,7 +56,14 @@ class DoctorController extends Controller
      */
     public function show(string $id)
     {
-        $doctor = Doctor::with(['poly', 'schedules'])->findOrFail($id);
+        $doctor = Doctor::with(['poly', 'schedules'])->find($id);
+
+        if(!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor not found',
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -69,7 +76,14 @@ class DoctorController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $doctor = Doctor::findOrFail($id);
+        $doctor = Doctor::find($id);
+
+        if(!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'poly_id' => 'required|exists:polys,id',
@@ -92,7 +106,15 @@ class DoctorController extends Controller
      */
     public function destroy(string $id)
     {
-        $doctor = Doctor::findOrFail($id);
+        $doctor = Doctor::find($id);
+        
+        if(!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor not found',
+            ], 404);
+        }
+
         $doctor->delete();
 
         return response()->json([

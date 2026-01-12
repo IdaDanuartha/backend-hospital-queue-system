@@ -26,13 +26,16 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
     public function getNextQueueNumber($queueTypeId, $serviceDate)
     {
         return DB::transaction(function () use ($queueTypeId, $serviceDate) {
+            // PostgreSQL doesn't support FOR UPDATE with aggregate functions
+            // So we get the max without lock first, then verify with a lock
             $lastQueue = $this->model
                 ->where('queue_type_id', $queueTypeId)
                 ->where('service_date', $serviceDate)
+                ->orderBy('queue_number', 'desc')
                 ->lockForUpdate()
-                ->max('queue_number');
+                ->first();
 
-            return ($lastQueue ?? 0) + 1;
+            return ($lastQueue?->queue_number ?? 0) + 1;
         });
     }
 
@@ -61,9 +64,9 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
     public function updateStatus($id, $status, $staffId = null)
     {
         $ticket = $this->find($id);
-        
+
         $updates = ['status' => $status];
-        
+
         if ($status === 'CALLED') {
             $updates['called_at'] = now();
         } elseif ($status === 'SERVING') {
@@ -71,11 +74,11 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
         } elseif ($status === 'DONE') {
             $updates['finished_at'] = now();
         }
-        
+
         if ($staffId) {
             $updates['handled_by_staff_id'] = $staffId;
         }
-        
+
         $ticket->update($updates);
         return $ticket;
     }
@@ -87,8 +90,8 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
             ->whereBetween('service_date', [$startDate, $endDate])
             ->selectRaw('
                 COUNT(*) as total_queues,
-                AVG(TIMESTAMPDIFF(MINUTE, issued_at, served_at)) as avg_waiting_time,
-                AVG(TIMESTAMPDIFF(MINUTE, served_at, finished_at)) as avg_service_time
+                AVG(EXTRACT(EPOCH FROM (served_at - issued_at)) / 60) as avg_waiting_time,
+                AVG(EXTRACT(EPOCH FROM (finished_at - served_at)) / 60) as avg_service_time
             ')
             ->first();
     }

@@ -13,7 +13,7 @@ class PolyController extends Controller
      */
     public function index()
     {
-        $polys = Poly::with(['serviceHours', 'doctors'])->get();
+        $polys = Poly::with(['serviceHours', 'doctors'])->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -47,7 +47,14 @@ class PolyController extends Controller
      */
     public function show(string $id)
     {
-        $poly = Poly::with(['serviceHours', 'doctors', 'queueTypes'])->findOrFail($id);
+        $poly = Poly::with(['serviceHours', 'doctors', 'queueTypes'])->find($id);
+
+        if(!$poly) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Polyclinic not found',
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -60,7 +67,14 @@ class PolyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $poly = Poly::findOrFail($id);
+        $poly = Poly::find($id);
+
+        if(!$poly) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Polyclinic not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'code' => 'required|string|unique:polys,code,' . $id,
@@ -83,7 +97,15 @@ class PolyController extends Controller
      */
     public function destroy(string $id)
     {
-        $poly = Poly::findOrFail($id);
+        $poly = Poly::find($id);
+        
+        if(!$poly) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Polyclinic not found',
+            ], 404);
+        }
+
         $poly->delete();
 
         return response()->json([

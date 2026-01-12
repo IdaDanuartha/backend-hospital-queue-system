@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\QueueStatus;
 use App\Models\QueueEvent;
 use App\Repositories\Contracts\QueueTicketRepositoryInterface;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +98,7 @@ class QueueService
         return DB::transaction(function () use ($ticketId, $staffId) {
             $ticket = $this->queueTicketRepository->find($ticketId);
 
-            if ($ticket->status !== 'CALLED') {
+            if ($ticket->status !== QueueStatus::CALLED) {
                 throw new \Exception('Only called queue can be recalled');
             }
 

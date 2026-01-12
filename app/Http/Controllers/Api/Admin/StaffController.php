@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
@@ -12,7 +13,7 @@ class StaffController extends Controller
      */
     public function index()
     {
-        $staff = \App\Models\Staff::with(['user', 'poly'])->get();
+        $staff = Staff::with(['user', 'poly'])->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -35,7 +36,7 @@ class StaffController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $user = \App\Models\User::create([
+        $user = UsefStaff::create([
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => $validated['email'],
@@ -43,7 +44,7 @@ class StaffController extends Controller
             'is_active' => $validated['is_active'] ?? true,
         ]);
 
-        $staff = \App\Models\Staff::create([
+        $staff = Staff::create([
             'user_id' => $user->id,
             'poly_id' => $validated['poly_id'],
             'code' => $validated['code'],
@@ -62,7 +63,14 @@ class StaffController extends Controller
      */
     public function show(string $id)
     {
-        $staff = \App\Models\Staff::with(['user', 'poly'])->findOrFail($id);
+        $staff = Staff::with(['user', 'poly'])->find($id);
+
+        if(!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff not found',
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -75,7 +83,14 @@ class StaffController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $staff = \App\Models\Staff::findOrFail($id);
+        $staff = Staff::find($id);
+
+        if(!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'name' => 'required|string',
@@ -118,7 +133,15 @@ class StaffController extends Controller
      */
     public function destroy(string $id)
     {
-        $staff = \App\Models\Staff::findOrFail($id);
+        $staff = Staff::find($id);
+
+        if(!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff not found',
+            ], 404);
+        }
+
         $user = $staff->user;
 
         // Delete staff first, then user (cascade)

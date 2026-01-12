@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PolyServiceHour;
 use Illuminate\Http\Request;
 
 class PolyServiceHourController extends Controller
@@ -20,7 +21,7 @@ class PolyServiceHourController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $serviceHour = \App\Models\PolyServiceHour::create($validated);
+        $serviceHour = PolyServiceHour::create($validated);
 
         return response()->json([
             'success' => true,
@@ -34,7 +35,14 @@ class PolyServiceHourController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $serviceHour = \App\Models\PolyServiceHour::findOrFail($id);
+        $serviceHour = PolyServiceHour::find($id);
+
+        if(!$serviceHour) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Service hour not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'day_of_week' => 'required|integer|min:0|max:6',
@@ -57,7 +65,15 @@ class PolyServiceHourController extends Controller
      */
     public function destroy(string $id)
     {
-        $serviceHour = \App\Models\PolyServiceHour::findOrFail($id);
+        $serviceHour = PolyServiceHour::find($id);
+
+        if(!$serviceHour) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Service hour not found',
+            ], 404);
+        }
+        
         $serviceHour->delete();
 
         return response()->json([

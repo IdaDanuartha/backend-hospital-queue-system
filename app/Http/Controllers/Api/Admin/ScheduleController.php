@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DoctorSchedule;
 use Illuminate\Http\Request;
 
 class ScheduleController extends Controller
@@ -20,7 +21,7 @@ class ScheduleController extends Controller
             'max_quota' => 'nullable|integer|min:1',
         ]);
 
-        $schedule = \App\Models\DoctorSchedule::create($validated);
+        $schedule = DoctorSchedule::create($validated);
 
         return response()->json([
             'success' => true,
@@ -34,7 +35,14 @@ class ScheduleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $schedule = \App\Models\DoctorSchedule::findOrFail($id);
+        $schedule = DoctorSchedule::find($id);
+
+        if(!$schedule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'day_of_week' => 'required|integer|min:0|max:6',
@@ -57,7 +65,14 @@ class ScheduleController extends Controller
      */
     public function destroy(string $id)
     {
-        $schedule = \App\Models\DoctorSchedule::findOrFail($id);
+        $schedule = DoctorSchedule::find($id);
+
+        if(!$schedule) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule not found',
+            ], 404);
+        }
         $schedule->delete();
 
         return response()->json([

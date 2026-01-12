@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\QueueType;
 use Illuminate\Http\Request;
 
 class QueueTypeController extends Controller
@@ -12,7 +13,7 @@ class QueueTypeController extends Controller
      */
     public function index()
     {
-        $queueTypes = \App\Models\QueueType::with('poly')->get();
+        $queueTypes = QueueType::with('poly')->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -34,7 +35,7 @@ class QueueTypeController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $queueType = \App\Models\QueueType::create($validated);
+        $queueType = QueueType::create($validated);
 
         return response()->json([
             'success' => true,
@@ -48,7 +49,14 @@ class QueueTypeController extends Controller
      */
     public function show(string $id)
     {
-        $queueType = \App\Models\QueueType::with('poly')->findOrFail($id);
+        $queueType = QueueType::with('poly')->find($id);
+
+        if(!$queueType) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Queue type not found',
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -61,7 +69,14 @@ class QueueTypeController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $queueType = \App\Models\QueueType::findOrFail($id);
+        $queueType = QueueType::find($id);
+
+        if(!$queueType) {
+            return response()->json([
+                'success'=> false,
+                'message'=> 'Queue type not found',
+            ], 404);
+        }
 
         $validated = $request->validate([
             'poly_id' => 'nullable|exists:polys,id',
@@ -86,7 +101,14 @@ class QueueTypeController extends Controller
      */
     public function destroy(string $id)
     {
-        $queueType = \App\Models\QueueType::findOrFail($id);
+        $queueType = QueueType::find($id);
+
+        if(!$queueType) {
+            return response()->json([
+                'success'=> false,
+                'message'=> 'Queue type not found',
+            ], 404);
+        }
         $queueType->delete();
 
         return response()->json([
