@@ -146,7 +146,7 @@ describe('Authentication API', function () {
             $response = postJson('/api/v1/auth/refresh');
 
             $response->assertStatus(401)
-                ->assertJsonFragment(['message' => 'Token not provided']);
+                ->assertJsonFragment(['message' => 'Unauthorized']);
         });
     });
 
@@ -182,7 +182,7 @@ describe('Authentication API', function () {
             $response = test()->getJson('/api/v1/auth/me');
 
             $response->assertStatus(401)
-                ->assertJsonFragment(['message' => 'Token not provided']);
+                ->assertJsonFragment(['message' => 'Unauthorized']);
         });
     });
 
@@ -205,7 +205,7 @@ describe('Authentication API', function () {
             $response = postJson('/api/v1/auth/logout');
 
             $response->assertStatus(401)
-                ->assertJsonFragment(['message' => 'Token not provided']);
+                ->assertJsonFragment(['message' => 'Unauthorized']);
         });
     });
 });

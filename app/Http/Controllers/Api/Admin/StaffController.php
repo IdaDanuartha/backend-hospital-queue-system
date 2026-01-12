@@ -36,7 +36,7 @@ class StaffController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $user = UsefStaff::create([
+        $user = \App\Models\User::create([
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => $validated['email'],
@@ -65,7 +65,7 @@ class StaffController extends Controller
     {
         $staff = Staff::with(['user', 'poly'])->find($id);
 
-        if(!$staff) {
+        if (!$staff) {
             return response()->json([
                 'success' => false,
                 'message' => 'Staff not found',
@@ -85,7 +85,7 @@ class StaffController extends Controller
     {
         $staff = Staff::find($id);
 
-        if(!$staff) {
+        if (!$staff) {
             return response()->json([
                 'success' => false,
                 'message' => 'Staff not found',
@@ -135,7 +135,7 @@ class StaffController extends Controller
     {
         $staff = Staff::find($id);
 
-        if(!$staff) {
+        if (!$staff) {
             return response()->json([
                 'success' => false,
                 'message' => 'Staff not found',
