@@ -12,11 +12,37 @@ help: ## Show this help message
 # LOCAL DEVELOPMENT
 # ==============================================================================
 
+.PHONY: help install setup build up down restart logs clean migrate seed fresh test
+
+help: ## Show this help message
+	@echo "Hospital Queue API - Available Commands:"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+
 install: ## Install application (first time setup)
 	@echo "🚀 Installing Hospital Queue API..."
-	cp .env.example .env
-	docker-compose up -d --build
-	@echo "⏳ Waiting for database to be ready..."
+	@echo "📦 Step 1/7: Creating required directories..."
+	@mkdir -p docker/nginx/conf.d
+	@mkdir -p docker/php
+	@echo "✅ Directories created"
+	@echo ""
+	@echo "📦 Step 2/7: Installing composer dependencies locally..."
+	@composer install --ignore-platform-reqs --no-interaction || echo "⚠️  Local composer install failed, will install in container"
+	@echo "✅ Dependencies check complete"
+	@echo ""
+	@echo "📋 Step 3/7: Setting up environment file..."
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo "✅ .env file created from .env.example"; \
+	else \
+		echo "⚠️  .env file already exists, skipping copy"; \
+	fi
+	@echo ""
+	@echo "🐳 Step 4/7: Building and starting Docker containers..."
+	@docker-compose up -d --build
+	@echo "✅ Containers started"
+	@echo ""
+	@echo "⏳ Step 5/7: Waiting for database to be ready..."
 	@timeout=60; while ! docker-compose exec -T postgres pg_isready -U hospital_user -d hospital_queue > /dev/null 2>&1; do \
 		timeout=$$((timeout - 1)); \
 		if [ $$timeout -le 0 ]; then \
@@ -26,21 +52,43 @@ install: ## Install application (first time setup)
 		echo "Waiting for database... ($$timeout seconds remaining)"; \
 		sleep 1; \
 	done
-	@echo "Database is ready!"
-	docker-compose exec app composer install
-	@echo "Installing Laravel Octane with FrankenPHP..."
-	docker-compose exec app composer require laravel/octane --with-all-dependencies
-	docker-compose exec app php artisan octane:install --server=frankenphp --no-interaction
-	docker-compose exec app php artisan key:generate
-	docker-compose exec app php artisan jwt:secret
-	docker-compose exec app php artisan migrate
-	docker-compose exec app php artisan db:seed
-	@echo "Restarting containers with FrankenPHP worker mode..."
-	docker-compose restart app
-	@echo "Installation complete!"
-	@echo "API: http://localhost:8000"
-	@echo "API Docs: http://localhost:8000/docs/api"
-	@echo "pgAdmin: http://localhost:5050"
+	@echo "✅ Database is ready!"
+	@echo ""
+	@echo "📦 Step 6/7: Installing composer dependencies in container..."
+	@docker-compose exec app composer install --no-interaction
+	@echo "✅ Container dependencies installed"
+	@echo ""
+	@echo "🔑 Step 7/7: Generating application keys..."
+	@docker-compose exec app php artisan key:generate
+	@docker-compose exec app php artisan jwt:secret
+	@echo ""
+	@echo "🗄️  Step 8/7: Running migrations and seeders..."
+	@docker-compose exec app php artisan migrate --force
+	@docker-compose exec app php artisan db:seed --force
+	@echo ""
+	@echo "🔒 Setting permissions..."
+	@docker-compose exec -u root app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+	@docker-compose exec -u root app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+	@echo "✅ Permissions set"
+	@echo ""
+	@echo "✅ Installation complete!"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "📍 Application URLs:"
+	@echo "   API: http://localhost:8000"
+	@echo "   API Docs: http://localhost:8000/docs/api"
+	@echo "   pgAdmin: http://localhost:5050"
+	@echo "      Email: admin@mail.com"
+	@echo "      Password: admin123"
+	@echo ""
+	@echo "🗄️  Database Info:"
+	@echo "   Host: localhost:5432 (or 'postgres' inside containers)"
+	@echo "   Database: hospital_queue"
+	@echo "   Username: hospital_user"
+	@echo "   Password: hospital_pass"
+	@echo ""
+	@echo "📦 Redis Info:"
+	@echo "   Host: localhost:6379 (or 'redis' inside containers)"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 up: ## Start all containers
 	docker-compose up -d
@@ -186,7 +234,7 @@ prod-deploy: ## Full production deployment
 
 health: ## Check application health
 	@echo "🏥 Checking API health..."
-	@curl -f http://localhost:8000/api/v1/health || echo "❌ API is not responding"
+	@curl -f http://localhost/api/v1/health || echo "❌ API is not responding"
 	@echo "\n🗄️  Checking database health..."
 	@docker-compose exec postgres pg_isready || echo "❌ Database is not responding"
 	@echo "\n🔴 Checking Redis health..."
