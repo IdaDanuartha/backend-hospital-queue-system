@@ -118,8 +118,13 @@ jobs:
         run: |
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
             echo '📥 Pulling latest code...' && \
+            git config --global --add safe.directory $DEPLOY_PATH && \
             git checkout production && \
             git pull origin production && \
+            echo '🔧 Fixing permissions...' && \
+            sudo chown -R \$(whoami):\$(whoami) . && \
+            mkdir -p vendor storage/framework/{sessions,views,cache} bootstrap/cache && \
+            chmod -R 775 storage bootstrap/cache && \
             echo '🐳 Stopping containers...' && \
             docker compose -f docker-compose.prod.yml down && \
             echo '🔨 Building and starting containers...' && \
