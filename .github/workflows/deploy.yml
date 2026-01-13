@@ -3,8 +3,6 @@ name: Laravel CI/CD Pipeline (Docker)
 on:
   push:
     branches: [ production ]
-  pull_request:
-    branches: [ production ]
 
 env:
   PHP_VERSION: '8.3'
@@ -99,6 +97,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
 
     steps:
       - name: Checkout code
@@ -109,40 +112,29 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
 
       - name: Deploy with Docker
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
-            cd ${{ secrets.DEPLOY_PATH }}
-            
-            echo "📥 Pulling latest code..."
-            git pull origin production
-            
-            echo "🐳 Stopping containers..."
-            docker compose -f docker-compose.prod.yml down
-            
-            echo "🔨 Building and starting containers..."
-            docker compose -f docker-compose.prod.yml up -d --build
-            
-            echo "⏳ Waiting for containers to be ready..."
-            sleep 10
-            
-            echo "📦 Installing dependencies..."
-            docker compose -f docker-compose.prod.yml exec -T app composer install --no-dev --optimize-autoloader --no-interaction
-            
-            echo "🔧 Running Laravel optimizations..."
-            docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache
-            docker compose -f docker-compose.prod.yml exec -T app php artisan route:cache
-            docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache
-            
-            echo "🗃️ Running database migrations..."
-            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
-            
-            echo "✅ Deployment completed successfully!"
-          ENDSSH
+          ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
+            echo '📥 Pulling latest code...' && \
+            git pull origin production && \
+            echo '🐳 Stopping containers...' && \
+            docker compose -f docker-compose.prod.yml down && \
+            echo '🔨 Building and starting containers...' && \
+            docker compose -f docker-compose.prod.yml up -d --build && \
+            echo '⏳ Waiting for containers to be ready...' && \
+            sleep 10 && \
+            echo '📦 Installing dependencies...' && \
+            docker compose -f docker-compose.prod.yml exec -T app composer install --no-dev --optimize-autoloader --no-interaction && \
+            echo '🔧 Running Laravel optimizations...' && \
+            docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache && \
+            docker compose -f docker-compose.prod.yml exec -T app php artisan route:cache && \
+            docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache && \
+            echo '🗃️ Running database migrations...' && \
+            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force && \
+            echo '✅ Deployment completed successfully!'"
 
       - name: Verify deployment
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && docker compose -f docker-compose.prod.yml ps"
-
+          ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && docker compose -f docker-compose.prod.yml ps"
