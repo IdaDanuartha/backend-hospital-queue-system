@@ -130,11 +130,11 @@ jobs:
             echo '📦 Installing dependencies...' && \
             docker compose -f docker-compose.prod.yml exec -T -u root app composer install --no-dev --optimize-autoloader --no-interaction && \
             echo '🔧 Running Laravel optimizations...' && \
-            docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache && \
-            docker compose -f docker-compose.prod.yml exec -T app php artisan route:cache && \
-            docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache && \
+            docker compose -f docker-compose.prod.yml exec -T -u root app php artisan config:cache && \
+            docker compose -f docker-compose.prod.yml exec -T -u root app php artisan route:cache && \
+            docker compose -f docker-compose.prod.yml exec -T -u root app php artisan view:cache && \
             echo '🗃️ Running database migrations...' && \
-            docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force && \
+            docker compose -f docker-compose.prod.yml exec -T -u root app php artisan migrate --force && \
             echo '✅ Deployment completed successfully!'"
 
       - name: Verify deployment
