@@ -7,7 +7,7 @@ on:
     branches: [ production ]
 
 env:
-  PHP_VERSION: '8.2'
+  PHP_VERSION: '8.3'
 
 jobs:
   # Job 1: Run Tests
