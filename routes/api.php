@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\QueueTypeController;
 use App\Http\Controllers\Api\Admin\StaffController;
 use App\Http\Controllers\Api\Admin\ReportController;
 use App\Http\Controllers\Api\Admin\PolyServiceHourController;
+use App\Http\Controllers\Api\Admin\SystemSettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,6 +98,13 @@ Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
             Route::get('busiest-hours', [ReportController::class, 'busiestHours']);
             Route::get('daily-count', [ReportController::class, 'dailyQueueCount']);
             Route::get('waiting-time-trend', [ReportController::class, 'waitingTimeTrend']);
+        });
+
+        // System Settings
+        Route::prefix('system-settings')->group(function () {
+            Route::get('/', [SystemSettingController::class, 'index']);
+            Route::get('{key}', [SystemSettingController::class, 'show']);
+            Route::put('/', [SystemSettingController::class, 'update']);
         });
     });
 });

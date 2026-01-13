@@ -15,22 +15,22 @@ class SystemSettingSeeder extends Seeder
          $settings = [
             [
                 'key' => 'GEOFENCE_ENABLED',
-                'value' => 'false',
+                'value' => 'true',
                 'description' => 'Enable geofencing for queue booking'
             ],
             [
                 'key' => 'MAX_DISTANCE_METER',
-                'value' => '100',
+                'value' => '200',
                 'description' => 'Maximum distance from hospital in meters'
             ],
             [
                 'key' => 'HOSPITAL_LAT',
-                'value' => '-8.670458',
+                'value' => '-8.681593220474468',
                 'description' => 'Hospital latitude coordinate (Denpasar, Bali)'
             ],
             [
                 'key' => 'HOSPITAL_LNG',
-                'value' => '115.212629',
+                'value' => '115.23976738058705',
                 'description' => 'Hospital longitude coordinate (Denpasar, Bali)'
             ],
         ];

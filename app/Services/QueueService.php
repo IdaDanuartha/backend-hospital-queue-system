@@ -16,21 +16,33 @@ class QueueService
         $this->queueTicketRepository = $queueTicketRepository;
     }
 
-    public function takeQueue($queueTypeId, $latitude = null, $longitude = null)
+    public function takeQueue($queueTypeId, $patientName, $latitude = null, $longitude = null)
     {
         // Validate geofencing if enabled
         if ($this->isGeofencingEnabled()) {
             if (!$latitude || !$longitude) {
-                throw new \Exception('Location is required');
+                throw new \Exception('Lokasi diperlukan untuk mengambil antrian');
             }
 
+            $maxDistance = (int) \App\Models\SystemSetting::get('MAX_DISTANCE_METER', 100);
             if (!$this->isWithinHospitalRadius($latitude, $longitude)) {
-                throw new \Exception('You must be within hospital area to take a queue');
+                throw new \Exception("Anda harus berada dalam radius {$maxDistance} meter dari rumah sakit untuk mengambil antrian");
             }
         }
 
-        return DB::transaction(function () use ($queueTypeId) {
+        return DB::transaction(function () use ($queueTypeId, $patientName) {
             $serviceDate = today();
+
+            // Check if patient already has a ticket for this queue type today
+            $existingTicket = \App\Models\QueueTicket::where('queue_type_id', $queueTypeId)
+                ->whereDate('service_date', $serviceDate)
+                ->whereRaw('LOWER(patient_name) = ?', [strtolower($patientName)])
+                ->first();
+
+            if ($existingTicket) {
+                throw new \Exception('Anda sudah mengambil antrian jenis ini hari ini');
+            }
+
             $nextNumber = $this->queueTicketRepository->getNextQueueNumber($queueTypeId, $serviceDate);
 
             $queueType = \App\Models\QueueType::findOrFail($queueTypeId);
@@ -46,6 +58,7 @@ class QueueService
                 'service_date' => $serviceDate,
                 'queue_number' => $nextNumber,
                 'display_number' => $displayNumber,
+                'patient_name' => $patientName,
                 'issued_at' => now(),
                 'status' => 'WAITING',
             ]);

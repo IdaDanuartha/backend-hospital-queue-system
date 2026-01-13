@@ -17,6 +17,7 @@ class QueueTicketFactory extends Factory
             'queue_type_id' => QueueType::factory(),
             'queue_number' => $this->faker->unique()->numberBetween(1, 999),
             'display_number' => 'T-' . $this->faker->unique()->numberBetween(1, 999),
+            'patient_name' => $this->faker->name(),
             'status' => QueueStatus::WAITING,
             'service_date' => today(),
             'issued_at' => now(),

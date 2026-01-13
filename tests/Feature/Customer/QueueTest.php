@@ -20,6 +20,7 @@ describe('Customer - Queue Management', function () {
 
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
+                'patient_name' => 'John Doe',
             ])
                 ->assertStatus(201)
                 ->assertJsonStructure([
@@ -30,6 +31,7 @@ describe('Customer - Queue Management', function () {
                             'id',
                             'queue_number',
                             'status',
+                            'patient_name',
                         ],
                         'token',
                     ],
@@ -40,16 +42,17 @@ describe('Customer - Queue Management', function () {
                 ]);
 
             expect(QueueTicket::count())->toBe(1);
+            expect(QueueTicket::first()->patient_name)->toBe('John Doe');
         });
 
-        it('validates queue_type_id', function () {
+        it('validates queue_type_id and patient_name', function () {
             postJson('/api/v1/customer/queue/take', [])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id']);
+                ->assertJsonValidationErrors(['queue_type_id', 'patient_name']);
 
             postJson('/api/v1/customer/queue/take', ['queue_type_id' => 'invalid-uuid'])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id']);
+                ->assertJsonValidationErrors(['queue_type_id', 'patient_name']);
         });
 
         it('fails if queue type is inactive', function () {
@@ -59,11 +62,52 @@ describe('Customer - Queue Management', function () {
             // Need to verify response
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
+                'patient_name' => 'John Doe',
             ])
                 ->assertStatus(400)
                 ->assertJson([
                     'success' => false,
                 ]);
+        });
+
+        it('prevents duplicate queue for same patient and queue type per day', function () {
+            $queueType = QueueType::factory()->create(['is_active' => true]);
+
+            // First queue should succeed
+            postJson('/api/v1/customer/queue/take', [
+                'queue_type_id' => $queueType->id,
+                'patient_name' => 'John Doe',
+            ])->assertStatus(201);
+
+            // Second queue with same patient name (case-insensitive) should fail
+            postJson('/api/v1/customer/queue/take', [
+                'queue_type_id' => $queueType->id,
+                'patient_name' => 'john doe',
+            ])
+                ->assertStatus(400)
+                ->assertJson([
+                    'success' => false,
+                    'message' => 'Anda sudah mengambil antrian jenis ini hari ini',
+                ]);
+
+            expect(QueueTicket::count())->toBe(1);
+        });
+
+        it('allows same patient to take different queue types', function () {
+            $queueType1 = QueueType::factory()->create(['is_active' => true]);
+            $queueType2 = QueueType::factory()->create(['is_active' => true]);
+
+            postJson('/api/v1/customer/queue/take', [
+                'queue_type_id' => $queueType1->id,
+                'patient_name' => 'John Doe',
+            ])->assertStatus(201);
+
+            postJson('/api/v1/customer/queue/take', [
+                'queue_type_id' => $queueType2->id,
+                'patient_name' => 'John Doe',
+            ])->assertStatus(201);
+
+            expect(QueueTicket::count())->toBe(2);
         });
     });
 
