@@ -41,9 +41,9 @@ services:
     container_name: hospital-queue-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-hospital_queue}
-      POSTGRES_USER: ${DB_USERNAME:-hospital_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-hospital_pass}
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     env_file:
       - .env.prod
