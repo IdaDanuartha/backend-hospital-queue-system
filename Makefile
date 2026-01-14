@@ -286,3 +286,9 @@ fix-permissions: ## Fix storage permissions
 update-deps: ## Update all dependencies
 	docker-compose exec app composer update
 	@echo "✅ Dependencies updated. Don't forget to test!"
+
+push-github: ## Push changes to GitHub
+	git push origin main
+	git checkout production
+	git push origin production
+	git checkout main
