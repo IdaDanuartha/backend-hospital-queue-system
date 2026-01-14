@@ -108,3 +108,15 @@ Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
         });
     });
 });
+
+
+Route::get('/test-ai-prediction', function() {
+    $predictor = app(\App\Services\AI\QueueWaitTimePredictor::class);
+    
+    return $predictor->predict(
+        queueTypeId: 1,
+        currentQueueNumber: 10,
+        targetQueueNumber: 45,
+        serviceDate: today()
+    );
+});

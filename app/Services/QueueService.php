@@ -77,18 +77,17 @@ class QueueService
     {
         return DB::transaction(function () use ($queueTypeId, $staffId) {
             $serviceDate = today();
-
-            // Get next waiting queue
             $nextQueue = $this->queueTicketRepository->getWaitingQueues($queueTypeId, $serviceDate)->first();
 
             if (!$nextQueue) {
                 throw new \Exception('No waiting queue available');
             }
 
-            // Update status to CALLED
             $ticket = $this->queueTicketRepository->updateStatus($nextQueue->id, 'CALLED', $staffId);
+            
+            // Track called time
+            $ticket->update(['called_at' => now()]);
 
-            // Log event
             $this->logQueueEvent($ticket->id, $staffId, 'CALL_NEXT', 'WAITING', 'CALLED');
 
             return $ticket->load(['queueType', 'handledByStaff.user']);
@@ -126,6 +125,9 @@ class QueueService
     {
         return DB::transaction(function () use ($ticketId, $staffId) {
             $ticket = $this->queueTicketRepository->updateStatus($ticketId, 'SERVING', $staffId);
+            
+            // Track service start time
+            $ticket->update(['service_started_at' => now()]);
 
             $this->logQueueEvent($ticketId, $staffId, 'START_SERVICE', 'CALLED', 'SERVING');
 
@@ -137,10 +139,18 @@ class QueueService
     {
         return DB::transaction(function () use ($ticketId, $staffId, $notes) {
             $ticket = $this->queueTicketRepository->find($ticketId);
+            
+            // Calculate actual service time
+            $actualMinutes = null;
+            if ($ticket->service_started_at) {
+                $actualMinutes = now()->diffInMinutes($ticket->service_started_at);
+            }
+            
             $ticket->update([
                 'status' => 'DONE',
                 'finished_at' => now(),
                 'notes' => $notes,
+                'actual_service_minutes' => $actualMinutes,
             ]);
 
             $this->logQueueEvent($ticketId, $staffId, 'FINISH', 'SERVING', 'DONE');
@@ -164,24 +174,25 @@ class QueueService
             $ticket->queue_type_id,
             $ticket->service_date
         );
+        
+        $currentQueueNumber = $currentQueue?->queue_number ?? 0;
 
-        // Get remaining queues
-        $remainingQueues = $this->queueTicketRepository->getWaitingQueues(
+        // === AI PREDICTION ===
+        $predictor = app(\App\Services\AI\QueueWaitTimePredictor::class);
+        $prediction = $predictor->predict(
             $ticket->queue_type_id,
+            $currentQueueNumber,
+            $ticket->queue_number,
             $ticket->service_date
-        )->where('queue_number', '<', $ticket->queue_number)->count();
-
-        // Calculate estimated waiting time
-        $estimatedWaitingTime = $this->calculateEstimatedWaitingTime(
-            $ticket->queue_type_id,
-            $remainingQueues
         );
 
         return [
             'ticket' => $ticket,
             'current_queue' => $currentQueue,
-            'remaining_queues' => $remainingQueues,
-            'estimated_waiting_minutes' => $estimatedWaitingTime,
+            'remaining_queues' => $ticket->queue_number - $currentQueueNumber,
+            'ai_prediction' => $prediction,
+            // Legacy field for backward compatibility
+            'estimated_waiting_minutes' => $prediction['estimated_minutes'],
         ];
     }
 
