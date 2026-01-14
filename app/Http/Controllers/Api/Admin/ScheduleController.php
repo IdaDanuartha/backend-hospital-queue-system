@@ -3,25 +3,22 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreScheduleRequest;
+use App\Http\Requests\Admin\UpdateScheduleRequest;
 use App\Models\DoctorSchedule;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ScheduleController extends Controller
 {
     /**
      * Store doctor schedule
      */
-    public function store(Request $request)
+    public function store(StoreScheduleRequest $request)
     {
-        $validated = $request->validate([
-            'doctor_id' => 'required|exists:doctors,id',
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'max_quota' => 'nullable|integer|min:1',
-        ]);
+        $schedule = DoctorSchedule::create($request->validated());
 
-        $schedule = DoctorSchedule::create($validated);
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
 
         return response()->json([
             'success' => true,
@@ -33,25 +30,21 @@ class ScheduleController extends Controller
     /**
      * Update schedule
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateScheduleRequest $request, string $id)
     {
         $schedule = DoctorSchedule::find($id);
 
-        if(!$schedule) {
+        if (!$schedule) {
             return response()->json([
                 'success' => false,
                 'message' => 'Schedule not found',
             ], 404);
         }
 
-        $validated = $request->validate([
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'max_quota' => 'nullable|integer|min:1',
-        ]);
+        $schedule->update($request->validated());
 
-        $schedule->update($validated);
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
 
         return response()->json([
             'success' => true,
@@ -67,7 +60,7 @@ class ScheduleController extends Controller
     {
         $schedule = DoctorSchedule::find($id);
 
-        if(!$schedule) {
+        if (!$schedule) {
             return response()->json([
                 'success' => false,
                 'message' => 'Schedule not found',
@@ -75,9 +68,13 @@ class ScheduleController extends Controller
         }
         $schedule->delete();
 
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
+
         return response()->json([
             'success' => true,
             'message' => 'Schedule deleted successfully',
         ]);
     }
 }
+

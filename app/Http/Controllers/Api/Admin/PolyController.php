@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StorePolyRequest;
+use App\Http\Requests\Admin\UpdatePolyRequest;
 use App\Models\Poly;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PolyController extends Controller
 {
@@ -13,7 +15,9 @@ class PolyController extends Controller
      */
     public function index()
     {
-        $polys = Poly::with(['serviceHours', 'doctors'])->latest()->get();
+        $polys = Cache::remember('admin:polys', 300, function () {
+            return Poly::with(['serviceHours', 'doctors'])->latest()->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -24,16 +28,13 @@ class PolyController extends Controller
     /**
      * Store new polyclinic
      */
-    public function store(Request $request)
+    public function store(StorePolyRequest $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|unique:polys,code',
-            'name' => 'required|string',
-            'location' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $poly = Poly::create($request->validated());
 
-        $poly = Poly::create($validated);
+        // Invalidate cache
+        Cache::forget('admin:polys');
+        Cache::forget('info:polys');
 
         return response()->json([
             'success' => true,
@@ -49,7 +50,7 @@ class PolyController extends Controller
     {
         $poly = Poly::with(['serviceHours', 'doctors', 'queueTypes'])->find($id);
 
-        if(!$poly) {
+        if (!$poly) {
             return response()->json([
                 'success' => false,
                 'message' => 'Polyclinic not found',
@@ -65,25 +66,22 @@ class PolyController extends Controller
     /**
      * Update polyclinic
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePolyRequest $request, string $id)
     {
         $poly = Poly::find($id);
 
-        if(!$poly) {
+        if (!$poly) {
             return response()->json([
                 'success' => false,
                 'message' => 'Polyclinic not found',
             ], 404);
         }
 
-        $validated = $request->validate([
-            'code' => 'required|string|unique:polys,code,' . $id,
-            'name' => 'required|string',
-            'location' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $poly->update($request->validated());
 
-        $poly->update($validated);
+        // Invalidate cache
+        Cache::forget('admin:polys');
+        Cache::forget('info:polys');
 
         return response()->json([
             'success' => true,
@@ -98,8 +96,8 @@ class PolyController extends Controller
     public function destroy(string $id)
     {
         $poly = Poly::find($id);
-        
-        if(!$poly) {
+
+        if (!$poly) {
             return response()->json([
                 'success' => false,
                 'message' => 'Polyclinic not found',
@@ -107,6 +105,10 @@ class PolyController extends Controller
         }
 
         $poly->delete();
+
+        // Invalidate cache
+        Cache::forget('admin:polys');
+        Cache::forget('info:polys');
 
         return response()->json([
             'success' => true,

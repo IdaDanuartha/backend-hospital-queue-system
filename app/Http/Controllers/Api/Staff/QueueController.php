@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Staff\CallNextQueueRequest;
+use App\Http\Requests\Staff\FinishServiceRequest;
+use App\Http\Requests\Staff\SkipQueueRequest;
 use App\Services\QueueService;
 use App\Repositories\Contracts\QueueTicketRepositoryInterface;
-use Illuminate\Http\Request;
 
 class QueueController extends Controller
 {
@@ -52,15 +54,11 @@ class QueueController extends Controller
     /**
      * Call next queue
      */
-    public function callNext(Request $request)
+    public function callNext(CallNextQueueRequest $request)
     {
-        $validated = $request->validate([
-            'queue_type_id' => 'required|exists:queue_types,id',
-        ]);
-
         try {
             $staff = auth()->user()->staff;
-            $ticket = $this->queueService->callNext($validated['queue_type_id'], $staff->id);
+            $ticket = $this->queueService->callNext($request->queue_type_id, $staff->id);
 
             return response()->json([
                 'success' => true,
@@ -100,15 +98,11 @@ class QueueController extends Controller
     /**
      * Skip queue
      */
-    public function skip(string $ticketId, Request $request)
+    public function skip(string $ticketId, SkipQueueRequest $request)
     {
-        $validated = $request->validate([
-            'remark' => 'nullable|string',
-        ]);
-
         try {
             $staff = auth()->user()->staff;
-            $ticket = $this->queueService->skipQueue($ticketId, $staff->id, $validated['remark'] ?? null);
+            $ticket = $this->queueService->skipQueue($ticketId, $staff->id, $request->remark);
 
             return response()->json([
                 'success' => true,
@@ -148,15 +142,11 @@ class QueueController extends Controller
     /**
      * Finish serving queue
      */
-    public function finishService(string $ticketId, Request $request)
+    public function finishService(string $ticketId, FinishServiceRequest $request)
     {
-        $validated = $request->validate([
-            'notes' => 'nullable|string',
-        ]);
-
         try {
             $staff = auth()->user()->staff;
-            $ticket = $this->queueService->finishService($ticketId, $staff->id, $validated['notes'] ?? null);
+            $ticket = $this->queueService->finishService($ticketId, $staff->id, $request->notes);
 
             return response()->json([
                 'success' => true,

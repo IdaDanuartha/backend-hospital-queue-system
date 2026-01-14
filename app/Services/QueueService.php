@@ -98,9 +98,10 @@ class QueueService
     public function skipQueue($ticketId, $staffId, $remark = null)
     {
         return DB::transaction(function () use ($ticketId, $staffId, $remark) {
+            $previousStatus = $this->queueTicketRepository->find($ticketId)->status;
             $ticket = $this->queueTicketRepository->updateStatus($ticketId, 'SKIPPED', $staffId);
 
-            $this->logQueueEvent($ticketId, $staffId, 'SKIP', $ticket->status, 'SKIPPED', $remark);
+            $this->logQueueEvent($ticketId, $staffId, 'SKIP', $previousStatus, 'SKIPPED', $remark);
 
             return $ticket;
         });
@@ -111,8 +112,8 @@ class QueueService
         return DB::transaction(function () use ($ticketId, $staffId) {
             $ticket = $this->queueTicketRepository->find($ticketId);
 
-            if ($ticket->status !== QueueStatus::CALLED) {
-                throw new \Exception('Only called queue can be recalled');
+            if (!in_array($ticket->status, [QueueStatus::CALLED->value, 'SKIPPED'])) {
+                throw new \Exception('Only called or skipped queue can be recalled');
             }
 
             $this->logQueueEvent($ticketId, $staffId, 'RECALL', 'CALLED', 'CALLED');

@@ -3,26 +3,19 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\IndexDoctorRequest;
 use App\Http\Requests\Admin\StoreDoctorRequest;
+use App\Http\Requests\Admin\UpdateDoctorRequest;
 use App\Models\Doctor;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DoctorController extends Controller
 {
     /**
      * Get all doctors
      */
-    public function index(Request $request)
+    public function index(IndexDoctorRequest $request)
     {
-        $request->validate([
-            /**
-             * Filter berdasarkan ID poliklinik
-             * @query
-             * @example 9d4e8f12-3456-7890-abcd-ef1234567890
-             */
-            'poly_id' => 'nullable|uuid|exists:polys,id',
-        ]);
-
         $query = Doctor::with(['poly', 'schedules']);
 
         if ($request->poly_id) {
@@ -44,6 +37,9 @@ class DoctorController extends Controller
     {
         $doctor = Doctor::create($request->validated());
 
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
+
         return response()->json([
             'success' => true,
             'message' => 'Doctor created successfully',
@@ -58,7 +54,7 @@ class DoctorController extends Controller
     {
         $doctor = Doctor::with(['poly', 'schedules'])->find($id);
 
-        if(!$doctor) {
+        if (!$doctor) {
             return response()->json([
                 'success' => false,
                 'message' => 'Doctor not found',
@@ -74,25 +70,22 @@ class DoctorController extends Controller
     /**
      * Update doctor
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateDoctorRequest $request, string $id)
     {
         $doctor = Doctor::find($id);
 
-        if(!$doctor) {
+        if (!$doctor) {
             return response()->json([
                 'success' => false,
                 'message' => 'Doctor not found',
             ], 404);
         }
 
-        $validated = $request->validate([
-            'poly_id' => 'required|exists:polys,id',
-            'sip_number' => 'required|string|unique:doctors,sip_number,' . $id,
-            'name' => 'required|string',
-            'specialization' => 'nullable|string',
-        ]);
+        $doctor->update($request->validated());
 
-        $doctor->update($validated);
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
+        Cache::forget("info:doctors:poly:{$doctor->poly_id}");
 
         return response()->json([
             'success' => true,
@@ -107,15 +100,20 @@ class DoctorController extends Controller
     public function destroy(string $id)
     {
         $doctor = Doctor::find($id);
-        
-        if(!$doctor) {
+
+        if (!$doctor) {
             return response()->json([
                 'success' => false,
                 'message' => 'Doctor not found',
             ], 404);
         }
 
+        $polyId = $doctor->poly_id;
         $doctor->delete();
+
+        // Invalidate cache
+        Cache::forget('info:doctors:all');
+        Cache::forget("info:doctors:poly:{$polyId}");
 
         return response()->json([
             'success' => true,
@@ -123,3 +121,4 @@ class DoctorController extends Controller
         ]);
     }
 }
+

@@ -7,9 +7,15 @@ use App\Models\Doctor;
 use App\Models\Poly;
 use App\Models\QueueType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class InfoController extends Controller
 {
+    /**
+     * Cache TTL in seconds (5 minutes)
+     */
+    private const CACHE_TTL = 300;
+
     /**
      * Get all polyclinics with service hours
      * 
@@ -17,9 +23,11 @@ class InfoController extends Controller
      */
     public function getPolys()
     {
-        $polys = Poly::active()
-            ->with('serviceHours')
-            ->get();
+        $polys = Cache::remember('info:polys', self::CACHE_TTL, function () {
+            return Poly::active()
+                ->with('serviceHours')
+                ->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -34,13 +42,18 @@ class InfoController extends Controller
      */
     public function getDoctorSchedules(Request $request)
     {
-        $query = Doctor::with(['poly', 'schedules']);
+        $polyId = $request->poly_id;
+        $cacheKey = $polyId ? "info:doctors:poly:{$polyId}" : 'info:doctors:all';
 
-        if ($request->poly_id) {
-            $query->where('poly_id', $request->poly_id);
-        }
+        $doctors = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($polyId) {
+            $query = Doctor::with(['poly', 'schedules']);
 
-        $doctors = $query->get();
+            if ($polyId) {
+                $query->where('poly_id', $polyId);
+            }
+
+            return $query->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -55,9 +68,11 @@ class InfoController extends Controller
      */
     public function getQueueTypes()
     {
-        $queueTypes = QueueType::active()
-            ->with('poly')
-            ->get();
+        $queueTypes = Cache::remember('info:queue_types', self::CACHE_TTL, function () {
+            return QueueType::active()
+                ->with('poly')
+                ->get();
+        });
 
         return response()->json([
             'success' => true,

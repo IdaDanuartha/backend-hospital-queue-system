@@ -3,25 +3,23 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StorePolyServiceHourRequest;
+use App\Http\Requests\Admin\UpdatePolyServiceHourRequest;
 use App\Models\PolyServiceHour;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PolyServiceHourController extends Controller
 {
     /**
      * Store poly service hour
      */
-    public function store(Request $request)
+    public function store(StorePolyServiceHourRequest $request)
     {
-        $validated = $request->validate([
-            'poly_id' => 'required|exists:polys,id',
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'open_time' => 'required|date_format:H:i',
-            'close_time' => 'required|date_format:H:i|after:open_time',
-            'is_active' => 'boolean',
-        ]);
+        $serviceHour = PolyServiceHour::create($request->validated());
 
-        $serviceHour = PolyServiceHour::create($validated);
+        // Invalidate cache
+        Cache::forget('info:polys');
+        Cache::forget('admin:polys');
 
         return response()->json([
             'success' => true,
@@ -33,25 +31,22 @@ class PolyServiceHourController extends Controller
     /**
      * Update service hour
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePolyServiceHourRequest $request, string $id)
     {
         $serviceHour = PolyServiceHour::find($id);
 
-        if(!$serviceHour) {
+        if (!$serviceHour) {
             return response()->json([
                 'success' => false,
                 'message' => 'Service hour not found',
             ], 404);
         }
 
-        $validated = $request->validate([
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'open_time' => 'required|date_format:H:i',
-            'close_time' => 'required|date_format:H:i|after:open_time',
-            'is_active' => 'boolean',
-        ]);
+        $serviceHour->update($request->validated());
 
-        $serviceHour->update($validated);
+        // Invalidate cache
+        Cache::forget('info:polys');
+        Cache::forget('admin:polys');
 
         return response()->json([
             'success' => true,
@@ -67,14 +62,18 @@ class PolyServiceHourController extends Controller
     {
         $serviceHour = PolyServiceHour::find($id);
 
-        if(!$serviceHour) {
+        if (!$serviceHour) {
             return response()->json([
                 'success' => false,
                 'message' => 'Service hour not found',
             ], 404);
         }
-        
+
         $serviceHour->delete();
+
+        // Invalidate cache
+        Cache::forget('info:polys');
+        Cache::forget('admin:polys');
 
         return response()->json([
             'success' => true,
@@ -82,3 +81,4 @@ class PolyServiceHourController extends Controller
         ]);
     }
 }
+

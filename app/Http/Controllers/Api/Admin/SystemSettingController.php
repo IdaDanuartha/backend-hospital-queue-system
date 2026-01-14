@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateSystemSettingRequest;
 use App\Models\SystemSetting;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SystemSettingController extends Controller
 {
@@ -13,13 +14,15 @@ class SystemSettingController extends Controller
      */
     public function index()
     {
-        $settings = SystemSetting::all()->mapWithKeys(function ($setting) {
-            return [
-                $setting->key => [
-                    'value' => $setting->value,
-                    'description' => $setting->description,
-                ]
-            ];
+        $settings = Cache::remember('admin:system_settings', 300, function () {
+            return SystemSetting::all()->mapWithKeys(function ($setting) {
+                return [
+                    $setting->key => [
+                        'value' => $setting->value,
+                        'description' => $setting->description,
+                    ]
+                ];
+            });
         });
 
         return response()->json([
@@ -36,14 +39,9 @@ class SystemSettingController extends Controller
      * @bodyParam settings.*.value string required Setting value
      * @bodyParam settings.*.description string optional Setting description
      */
-    public function update(Request $request)
+    public function update(UpdateSystemSettingRequest $request)
     {
-        $validated = $request->validate([
-            'settings' => 'required|array',
-            'settings.*.key' => 'required|string',
-            'settings.*.value' => 'required|string',
-            'settings.*.description' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $updatedSettings = [];
 
@@ -55,6 +53,9 @@ class SystemSettingController extends Controller
             );
             $updatedSettings[] = $updated;
         }
+
+        // Invalidate cache
+        Cache::forget('admin:system_settings');
 
         return response()->json([
             'success' => true,
@@ -83,3 +84,4 @@ class SystemSettingController extends Controller
         ]);
     }
 }
+
