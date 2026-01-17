@@ -84,7 +84,7 @@ class QueueService
             }
 
             $ticket = $this->queueTicketRepository->updateStatus($nextQueue->id, 'CALLED', $staffId);
-            
+
             // Track called time
             $ticket->update(['called_at' => now()]);
 
@@ -125,7 +125,7 @@ class QueueService
     {
         return DB::transaction(function () use ($ticketId, $staffId) {
             $ticket = $this->queueTicketRepository->updateStatus($ticketId, 'SERVING', $staffId);
-            
+
             // Track service start time
             $ticket->update(['service_started_at' => now()]);
 
@@ -139,13 +139,13 @@ class QueueService
     {
         return DB::transaction(function () use ($ticketId, $staffId, $notes) {
             $ticket = $this->queueTicketRepository->find($ticketId);
-            
+
             // Calculate actual service time
             $actualMinutes = null;
             if ($ticket->service_started_at) {
                 $actualMinutes = now()->diffInMinutes($ticket->service_started_at);
             }
-            
+
             $ticket->update([
                 'status' => 'DONE',
                 'finished_at' => now(),
@@ -156,6 +156,62 @@ class QueueService
             $this->logQueueEvent($ticketId, $staffId, 'FINISH', 'SERVING', 'DONE');
 
             return $ticket;
+        });
+    }
+
+    public function recallSkippedQueue($ticketId, $staffId)
+    {
+        return DB::transaction(function () use ($ticketId, $staffId) {
+            $ticket = $this->queueTicketRepository->find($ticketId);
+
+            if ($ticket->status !== QueueStatus::SKIPPED) {
+                throw new \Exception('Hanya antrian yang berstatus skipped yang dapat di-recall');
+            }
+
+            // Get the max queue number for today's waiting queue
+            $maxQueueNumber = $this->queueTicketRepository->getMaxQueueNumber(
+                $ticket->queue_type_id,
+                $ticket->service_date
+            );
+
+            // Update the queue number to be at the end and change status to WAITING
+            $previousStatus = $ticket->status;
+            $ticket->update([
+                'queue_number' => $maxQueueNumber + 1,
+                'status' => 'WAITING',
+                'display_number' => $ticket->queueType->code_prefix . '-' . str_pad($maxQueueNumber + 1, 3, '0', STR_PAD_LEFT),
+            ]);
+
+            $this->logQueueEvent($ticketId, $staffId, 'RECALL', $previousStatus, 'WAITING', 'Recalled from skipped queue to end of waiting queue');
+
+            return $ticket->load(['queueType', 'handledByStaff.user']);
+        });
+    }
+
+    public function cancelQueue($token)
+    {
+        return DB::transaction(function () use ($token) {
+            $publicToken = \App\Models\PublicQueueToken::where('token', $token)->firstOrFail();
+
+            if ($publicToken->isExpired()) {
+                throw new \Exception('Token telah kedaluwarsa');
+            }
+
+            $ticket = $publicToken->queueTicket;
+
+            if ($ticket->status !== QueueStatus::WAITING) {
+                throw new \Exception('Hanya antrian yang berstatus menunggu yang dapat dibatalkan');
+            }
+
+            $previousStatus = $ticket->status;
+            $ticket->update([
+                'status' => 'CANCELLED',
+                'cancelled_at' => now(),
+            ]);
+
+            $this->logQueueEvent($ticket->id, null, 'CANCEL', $previousStatus, 'CANCELLED', 'Cancelled by patient');
+
+            return $ticket->load('queueType');
         });
     }
 
@@ -174,7 +230,7 @@ class QueueService
             $ticket->queue_type_id,
             $ticket->service_date
         );
-        
+
         $currentQueueNumber = $currentQueue?->queue_number ?? 0;
 
         // === AI PREDICTION ===

@@ -61,6 +61,26 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
             ->get();
     }
 
+    public function getSkippedQueues($queueTypeId, $serviceDate)
+    {
+        return $this->model
+            ->where('queue_type_id', $queueTypeId)
+            ->where('service_date', $serviceDate)
+            ->where('status', 'SKIPPED')
+            ->with(['queueType', 'handledByStaff.user'])
+            ->orderBy('queue_number')
+            ->get();
+    }
+
+    public function getMaxQueueNumber($queueTypeId, $serviceDate)
+    {
+        return $this->model
+            ->where('queue_type_id', $queueTypeId)
+            ->where('service_date', $serviceDate)
+            ->where('status', 'WAITING')
+            ->max('queue_number') ?? 0;
+    }
+
     public function updateStatus($id, $status, $staffId = null)
     {
         $ticket = $this->find($id);

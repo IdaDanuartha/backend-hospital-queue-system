@@ -9,6 +9,7 @@ enum QueueAction: string
     case SKIP = 'SKIP';
     case START_SERVICE = 'START_SERVICE';
     case FINISH = 'FINISH';
+    case CANCEL = 'CANCEL';
 
     /**
      * Get the Indonesian label
@@ -21,6 +22,7 @@ enum QueueAction: string
             self::SKIP => 'Lewati Antrian',
             self::START_SERVICE => 'Mulai Pelayanan',
             self::FINISH => 'Selesai',
+            self::CANCEL => 'Batalkan Antrian',
         };
     }
 
@@ -35,6 +37,7 @@ enum QueueAction: string
             self::SKIP => 'Lewati',
             self::START_SERVICE => 'Mulai',
             self::FINISH => 'Selesai',
+            self::CANCEL => 'Batalkan',
         };
     }
 
@@ -49,6 +52,7 @@ enum QueueAction: string
             self::SKIP => 'forward',
             self::START_SERVICE => 'play',
             self::FINISH => 'check',
+            self::CANCEL => 'x-circle',
         };
     }
 
@@ -63,6 +67,7 @@ enum QueueAction: string
             self::SKIP => 'red',
             self::START_SERVICE => 'green',
             self::FINISH => 'purple',
+            self::CANCEL => 'gray',
         };
     }
 
@@ -77,6 +82,7 @@ enum QueueAction: string
             self::SKIP => QueueStatus::SKIPPED,
             self::START_SERVICE => QueueStatus::SERVING,
             self::FINISH => QueueStatus::DONE,
+            self::CANCEL => QueueStatus::CANCELLED,
         };
     }
 

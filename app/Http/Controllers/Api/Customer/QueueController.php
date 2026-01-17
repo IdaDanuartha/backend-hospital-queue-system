@@ -67,4 +67,27 @@ class QueueController extends Controller
             ], 404);
         }
     }
+
+    /**
+     * Cancel queue by token
+     * 
+     * @unauthenticated
+     */
+    public function cancelQueue(string $token)
+    {
+        try {
+            $ticket = $this->queueService->cancelQueue($token);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Antrian berhasil dibatalkan',
+                'data' => $ticket,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

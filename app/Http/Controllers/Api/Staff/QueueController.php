@@ -160,4 +160,55 @@ class QueueController extends Controller
             ], 400);
         }
     }
+
+    /**
+     * Get today's skipped queues for staff's poly
+     */
+    public function getSkippedQueues()
+    {
+        $staff = auth()->user()->staff;
+
+        if (!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff profile not found',
+            ], 404);
+        }
+
+        $queueTypes = \App\Models\QueueType::where('poly_id', $staff->poly_id)
+            ->active()
+            ->get();
+
+        $skippedQueues = [];
+        foreach ($queueTypes as $type) {
+            $skippedQueues[$type->id] = $this->queueTicketRepository->getSkippedQueues($type->id, today());
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $skippedQueues,
+        ]);
+    }
+
+    /**
+     * Recall skipped queue back to waiting queue at the end
+     */
+    public function recallSkipped(string $ticketId)
+    {
+        try {
+            $staff = auth()->user()->staff;
+            $ticket = $this->queueService->recallSkippedQueue($ticketId, $staff->id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Skipped queue recalled to waiting queue',
+                'data' => $ticket,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
 }

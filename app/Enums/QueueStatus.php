@@ -9,6 +9,7 @@ enum QueueStatus: string
     case SERVING = 'SERVING';
     case DONE = 'DONE';
     case SKIPPED = 'SKIPPED';
+    case CANCELLED = 'CANCELLED';
 
     /**
      * Get the Indonesian label
@@ -21,6 +22,7 @@ enum QueueStatus: string
             self::SERVING => 'Sedang Dilayani',
             self::DONE => 'Selesai',
             self::SKIPPED => 'Dilewati',
+            self::CANCELLED => 'Dibatalkan',
         };
     }
 
@@ -35,6 +37,7 @@ enum QueueStatus: string
             self::SERVING => 'yellow',
             self::DONE => 'green',
             self::SKIPPED => 'red',
+            self::CANCELLED => 'orange',
         };
     }
 
@@ -49,6 +52,7 @@ enum QueueStatus: string
             self::SERVING => 'bg-yellow-100 text-yellow-800',
             self::DONE => 'bg-green-100 text-green-800',
             self::SKIPPED => 'bg-red-100 text-red-800',
+            self::CANCELLED => 'bg-orange-100 text-orange-800',
         };
     }
 
@@ -57,7 +61,7 @@ enum QueueStatus: string
      */
     public function isActive(): bool
     {
-        return !in_array($this, [self::DONE, self::SKIPPED]);
+        return !in_array($this, [self::DONE, self::SKIPPED, self::CANCELLED]);
     }
 
     /**
@@ -65,7 +69,7 @@ enum QueueStatus: string
      */
     public function isCompleted(): bool
     {
-        return in_array($this, [self::DONE, self::SKIPPED]);
+        return in_array($this, [self::DONE, self::SKIPPED, self::CANCELLED]);
     }
 
     /**
