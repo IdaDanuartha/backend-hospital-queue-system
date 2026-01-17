@@ -121,8 +121,9 @@ jobs:
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
             echo '📥 Pulling latest code...' && \
             git config --global --add safe.directory $DEPLOY_PATH && \
+            git fetch origin production && \
             git checkout production && \
-            git pull origin production && \
+            git reset --hard origin/production && \
             echo '� Stopping containers...' && \
             docker compose -f docker-compose.prod.yml down && \
             echo '🔨 Building and starting containers...' && \
