@@ -25,6 +25,17 @@ use App\Http\Controllers\Api\Admin\SystemSettingController;
 // Public routes (no authentication required)
 Route::prefix('v1')->group(function () {
 
+    Route::get('/test-ai-prediction', function () {
+        $predictor = app(\App\Services\AI\QueueWaitTimePredictor::class);
+
+        return $predictor->predict(
+            queueTypeId: 1,
+            currentQueueNumber: 10,
+            targetQueueNumber: 45,
+            serviceDate: today()
+        );
+    });
+
     // Authentication
     Route::prefix('auth')->group(function () {
         Route::post('login', [AuthController::class, 'login']);
@@ -35,6 +46,7 @@ Route::prefix('v1')->group(function () {
         // Queue management
         Route::post('queue/take', [CustomerQueueController::class, 'takeQueue']);
         Route::get('queue/status/{token}', [CustomerQueueController::class, 'getStatus']);
+        Route::post('queue/cancel/{token}', [CustomerQueueController::class, 'cancelQueue']);
 
         // Information
         Route::get('info/polys', [InfoController::class, 'getPolys']);
@@ -59,8 +71,10 @@ Route::prefix('v1')->middleware(['jwt.auth'])->group(function () {
 
         Route::prefix('queue')->group(function () {
             Route::get('today', [StaffQueueController::class, 'getTodayQueues']);
+            Route::get('skipped', [StaffQueueController::class, 'getSkippedQueues']);
             Route::post('call-next', [StaffQueueController::class, 'callNext']);
             Route::post('{id}/recall', [StaffQueueController::class, 'recall']);
+            Route::post('{id}/recall-skipped', [StaffQueueController::class, 'recallSkipped']);
             Route::post('{id}/skip', [StaffQueueController::class, 'skip']);
             Route::post('{id}/start-service', [StaffQueueController::class, 'startService']);
             Route::post('{id}/finish-service', [StaffQueueController::class, 'finishService']);

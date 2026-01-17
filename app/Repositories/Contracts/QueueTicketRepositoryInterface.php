@@ -8,5 +8,7 @@ interface QueueTicketRepositoryInterface extends BaseRepositoryInterface
     public function getNextQueueNumber($queueTypeId, $serviceDate);
     public function getCurrentQueue($queueTypeId, $serviceDate);
     public function getWaitingQueues($queueTypeId, $serviceDate);
+    public function getSkippedQueues($queueTypeId, $serviceDate);
+    public function getMaxQueueNumber($queueTypeId, $serviceDate);
     public function updateStatus($id, $status, $staffId = null);
 }

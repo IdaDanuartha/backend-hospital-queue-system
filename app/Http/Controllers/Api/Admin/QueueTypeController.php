@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreQueueTypeRequest;
+use App\Http\Requests\Admin\UpdateQueueTypeRequest;
 use App\Models\QueueType;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class QueueTypeController extends Controller
 {
@@ -24,18 +26,12 @@ class QueueTypeController extends Controller
     /**
      * Store new queue type
      */
-    public function store(Request $request)
+    public function store(StoreQueueTypeRequest $request)
     {
-        $validated = $request->validate([
-            'poly_id' => 'nullable|exists:polys,id',
-            'name' => 'required|string',
-            'code_prefix' => 'required|string|max:5',
-            'service_unit' => 'nullable|string',
-            'avg_service_minutes' => 'nullable|integer|min:1',
-            'is_active' => 'boolean',
-        ]);
+        $queueType = QueueType::create($request->validated());
 
-        $queueType = QueueType::create($validated);
+        // Invalidate cache
+        Cache::forget('info:queue_types');
 
         return response()->json([
             'success' => true,
@@ -51,7 +47,7 @@ class QueueTypeController extends Controller
     {
         $queueType = QueueType::with('poly')->find($id);
 
-        if(!$queueType) {
+        if (!$queueType) {
             return response()->json([
                 'success' => false,
                 'message' => 'Queue type not found',
@@ -67,27 +63,21 @@ class QueueTypeController extends Controller
     /**
      * Update queue type
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateQueueTypeRequest $request, string $id)
     {
         $queueType = QueueType::find($id);
 
-        if(!$queueType) {
+        if (!$queueType) {
             return response()->json([
-                'success'=> false,
-                'message'=> 'Queue type not found',
+                'success' => false,
+                'message' => 'Queue type not found',
             ], 404);
         }
 
-        $validated = $request->validate([
-            'poly_id' => 'nullable|exists:polys,id',
-            'name' => 'required|string',
-            'code_prefix' => 'required|string|max:5',
-            'service_unit' => 'nullable|string',
-            'avg_service_minutes' => 'nullable|integer|min:1',
-            'is_active' => 'boolean',
-        ]);
+        $queueType->update($request->validated());
 
-        $queueType->update($validated);
+        // Invalidate cache
+        Cache::forget('info:queue_types');
 
         return response()->json([
             'success' => true,
@@ -103,13 +93,16 @@ class QueueTypeController extends Controller
     {
         $queueType = QueueType::find($id);
 
-        if(!$queueType) {
+        if (!$queueType) {
             return response()->json([
-                'success'=> false,
-                'message'=> 'Queue type not found',
+                'success' => false,
+                'message' => 'Queue type not found',
             ], 404);
         }
         $queueType->delete();
+
+        // Invalidate cache
+        Cache::forget('info:queue_types');
 
         return response()->json([
             'success' => true,
@@ -117,3 +110,4 @@ class QueueTypeController extends Controller
         ]);
     }
 }
+

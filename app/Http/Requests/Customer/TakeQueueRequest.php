@@ -28,13 +28,13 @@ class TakeQueueRequest extends BaseRequest
 
             /**
              * Latitude lokasi pengguna (opsional, untuk geofencing)
-             * @example -8.670458
+             * @example -8.68159129117202
              */
             'latitude' => 'nullable|numeric|between:-90,90',
 
             /**
              * Longitude lokasi pengguna (opsional, untuk geofencing)
-             * @example 115.212629
+             * @example 115.23986166248717
              */
             'longitude' => 'nullable|numeric|between:-180,180',
         ];

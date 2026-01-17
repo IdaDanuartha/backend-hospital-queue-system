@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreStaffRequest;
+use App\Http\Requests\Admin\UpdateStaffRequest;
 use App\Models\Staff;
-use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
@@ -24,17 +25,9 @@ class StaffController extends Controller
     /**
      * Store new staff
      */
-    public function store(Request $request)
+    public function store(StoreStaffRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'username' => 'required|string|unique:users,username',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'poly_id' => 'required|exists:polys,id',
-            'code' => 'required|string|unique:staff,code',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $user = \App\Models\User::create([
             'name' => $validated['name'],
@@ -81,7 +74,7 @@ class StaffController extends Controller
     /**
      * Update staff
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateStaffRequest $request, string $id)
     {
         $staff = Staff::find($id);
 
@@ -92,15 +85,7 @@ class StaffController extends Controller
             ], 404);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'username' => 'required|string|unique:users,username,' . $staff->user_id,
-            'email' => 'required|email|unique:users,email,' . $staff->user_id,
-            'password' => 'nullable|string|min:8',
-            'poly_id' => 'required|exists:polys,id',
-            'code' => 'required|string|unique:staff,code,' . $id,
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $userData = [
             'name' => $validated['name'],
@@ -154,3 +139,4 @@ class StaffController extends Controller
         ]);
     }
 }
+
