@@ -3,7 +3,7 @@ run-name: Deploy ${{ github.ref_name }}
 
 on:
   push:
-    branches: [ production ]
+    # branches: [ production ]
     tags: [ 'v*' ]
 
 env:
