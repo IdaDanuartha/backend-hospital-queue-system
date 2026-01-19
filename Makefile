@@ -290,6 +290,7 @@ update-deps: ## Update all dependencies
 push-github: ## Push changes to GitHub
 	git push origin main
 	git checkout production
+	git pull origin production
 	git merge main
 	git push origin production
 	git checkout main
