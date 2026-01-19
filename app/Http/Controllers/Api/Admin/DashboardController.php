@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\QueueStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Poly;
 use App\Models\QueueTicket;
@@ -40,9 +41,9 @@ class DashboardController extends Controller
                     ->get();
 
                 $polyData['total_today'] += $queues->count();
-                $polyData['waiting'] += $queues->where('status', 'WAITING')->count();
-                $polyData['serving'] += $queues->where('status', 'SERVING')->count();
-                $polyData['done'] += $queues->where('status', 'DONE')->count();
+                $polyData['waiting'] += $queues->where('status', QueueStatus::WAITING)->count();
+                $polyData['serving'] += $queues->where('status', QueueStatus::SERVING)->count();
+                $polyData['done'] += $queues->where('status', QueueStatus::DONE)->count();
             }
 
             $dashboard[] = $polyData;
