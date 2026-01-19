@@ -19,33 +19,46 @@ RESTful API untuk sistem antrian rumah sakit dengan fitur real-time monitoring, 
 ### 👤 Customer (Pasien)
 - ✅ Ambil nomor antrian tanpa login
 - ✅ Monitoring status antrian real-time
-- ✅ Estimasi waktu tunggu
+- ✅ AI-Powered Prediksi Waktu Tunggu (Gemini AI)
 - ✅ Informasi jadwal dokter & poli
 - ✅ Geofencing (opsional)
+- ✅ Pembatalan antrian via token
 
 ### 👨‍⚕️ Staff
 - ✅ Dashboard antrian per poli
 - ✅ Panggil antrian berikutnya
 - ✅ Skip antrian (pasien tidak hadir)
-- ✅ Recall antrian
-- ✅ Update status pelayanan
+- ✅ Recall antrian yang sedang dipanggil
+- ✅ Recall skipped queue (kembalikan ke antrian)
+- ✅ Start & Finish service dengan tracking waktu
 - ✅ Audit trail semua aksi
 
 ### 👨‍💼 Admin
 - ✅ Dashboard monitoring seluruh poli
 - ✅ CRUD Master Data (Poli, Dokter, Jadwal, Staff)
 - ✅ Manajemen jenis antrian
+- ✅ System Settings Management (Geofencing, dll)
 - ✅ Laporan & statistik lengkap
 - ✅ User management
+
+### 🤖 AI & Real-time
+- ✅ Prediksi Waktu Tunggu dengan AI (Gemini API)
+- ✅ Pattern recognition berdasarkan historical data
+- ✅ Confidence score untuk setiap prediksi
 
 ## 🛠 Tech Stack
 
 - **Framework**: Laravel 12
 - **Database**: PostgreSQL 15+
+- **Cache / Queue**: Redis
 - **Authentication**: JWT (tymon/jwt-auth)
 - **API Documentation**: Scramble
+- **Real-time**: Laravel Reverb (WebSocket)
+- **AI Integration**: Google Gemini API (optional)
+- **Container**: Docker & Docker Compose
+- **CI/CD**: GitHub Actions
 - **Architecture**: Repository Pattern + Service Layer
-- **PHP Version**: 8.2+
+- **PHP Version**: 8.2+ (Recommended: 8.3)
 
 ## 📦 Installation
 
@@ -120,6 +133,22 @@ php artisan serve
 
 API akan berjalan di: `http://localhost:8000`
 
+### Alternative: Docker Setup
+
+```bash
+# Start all services dengan Docker
+docker compose up -d
+
+# Run migrations inside container
+docker compose exec app php artisan migrate --seed
+```
+
+Services yang tersedia:
+- **App (Laravel)**: http://localhost:8000
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050
+- **Redis**: localhost:6379
+
 ## ⚙️ Configuration
 
 ### JWT Configuration
@@ -140,6 +169,16 @@ UPDATE system_settings SET value = '100' WHERE key = 'MAX_DISTANCE_METER';
 UPDATE system_settings SET value = '-8.670458' WHERE key = 'HOSPITAL_LAT';
 UPDATE system_settings SET value = '115.212629' WHERE key = 'HOSPITAL_LNG';
 ```
+
+### AI Prediction Configuration
+
+Untuk menggunakan Gemini AI prediction (opsional):
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Jika tidak dikonfigurasi, sistem akan menggunakan Local ML Model.
 
 ### Rate Limiting
 
@@ -241,11 +280,18 @@ curl -X POST http://localhost:8000/api/v1/staff/queue/call-next \
 | GET | `/customer/queue/status/{token}` | Public | Check queue status |
 | GET | `/customer/info/polys` | Public | Get polyclinics |
 | GET | `/customer/info/doctors` | Public | Get doctor schedules |
+| POST | `/customer/queue/cancel` | Public | Cancel queue via token |
 | GET | `/staff/dashboard` | Staff | Staff dashboard |
 | POST | `/staff/queue/call-next` | Staff | Call next queue |
 | POST | `/staff/queue/{id}/skip` | Staff | Skip queue |
+| POST | `/staff/queue/{id}/start-service` | Staff | Start serving |
+| POST | `/staff/queue/{id}/finish-service` | Staff | Finish serving |
+| GET | `/staff/queue/skipped` | Staff | Get skipped queues |
+| POST | `/staff/queue/{id}/recall-skipped` | Staff | Recall skipped queue |
 | GET | `/admin/dashboard` | Admin | Admin dashboard |
 | GET | `/admin/polys` | Admin | List polyclinics |
+| GET | `/admin/settings` | Admin | Get system settings |
+| PUT | `/admin/settings/{key}` | Admin | Update system setting |
 | GET | `/admin/reports/statistics` | Admin | Queue statistics |
 
 *Lihat dokumentasi lengkap di `/docs/api`*
@@ -325,7 +371,9 @@ tests/
 
 ## 🚀 Deployment
 
-### Production Setup
+### Docker Production Setup
+
+Proyek ini mendukung deployment dengan Docker & CI/CD via GitHub Actions.
 
 1. **Environment Variables**
 
@@ -336,33 +384,59 @@ APP_URL=https://api.yourdomain.com
 
 # Use strong secrets in production
 JWT_SECRET=your_production_secret
+
+# Optional: Gemini AI for predictions
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-2. **Optimize Performance**
+2. **Docker Compose Production**
+
+```bash
+# Start production containers
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Run migrations
+docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+
+# Optimize Laravel
+docker compose -f docker-compose.prod.yml exec app php artisan config:cache
+docker compose -f docker-compose.prod.yml exec app php artisan route:cache
+docker compose -f docker-compose.prod.yml exec app php artisan view:cache
+```
+
+3. **CI/CD with GitHub Actions**
+
+Pipeline otomatis akan:
+- ✅ Run tests on push
+- ✅ Deploy ke server via SSH (tag-based: `v*`)
+- ✅ Build Docker containers
+- ✅ Run migrations
+
+**Required GitHub Secrets:**
+- `SERVER_HOST`: Server IP/hostname
+- `SERVER_USER`: SSH username
+- `DEPLOY_PATH`: Path to project on server
+- `SSH_PRIVATE_KEY`: SSH private key
+
+4. **Manual Optimization (Non-Docker)**
 
 ```bash
 # Cache configuration
 php artisan config:cache
-
-# Cache routes
 php artisan route:cache
 
 # Optimize autoloader
 composer install --optimize-autoloader --no-dev
 ```
 
-3. **Database Migration**
-
-```bash
-# Production migration
-php artisan migrate --force
-```
-
-4. **Queue Workers**
+5. **Queue & WebSocket Workers**
 
 ```bash
 # For background jobs
 php artisan queue:work
+
+# For real-time WebSocket (Laravel Reverb)
+php artisan reverb:start
 ```
 
 ## 🔒 Security Features
@@ -424,5 +498,5 @@ Developed by: **Ida Danuartha**
 
 ---
 
-**Version:** 1.0.0  
+**Version:** 1.2.14  
 **Last Updated:** January 2026
