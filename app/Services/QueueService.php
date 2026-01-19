@@ -143,7 +143,7 @@ class QueueService
             // Calculate actual service time
             $actualMinutes = null;
             if ($ticket->service_started_at) {
-                $actualMinutes = now()->diffInMinutes($ticket->service_started_at);
+                $actualMinutes = (int) abs(now()->diffInMinutes($ticket->service_started_at));
             }
 
             $ticket->update([
