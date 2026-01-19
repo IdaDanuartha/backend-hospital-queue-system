@@ -8,6 +8,7 @@ use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,5 +34,13 @@ class AppServiceProvider extends ServiceProvider
                     SecurityScheme::http('bearer', 'JWT')
                 );
             });
+
+        // Force HTTPS pada production
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
+        // Trust proxies (untuk X-Forwarded-Proto header)
+        $this->app['request']->server->set('HTTPS', 'on');
     }
 }
