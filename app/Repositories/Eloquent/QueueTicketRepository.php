@@ -77,7 +77,6 @@ class QueueTicketRepository extends BaseRepository implements QueueTicketReposit
         return $this->model
             ->where('queue_type_id', $queueTypeId)
             ->where('service_date', $serviceDate)
-            ->where('status', 'WAITING')
             ->max('queue_number') ?? 0;
     }
 
