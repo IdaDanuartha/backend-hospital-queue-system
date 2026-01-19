@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Api\Staff;
 
+use App\Enums\QueueStatus;
 use App\Http\Controllers\Controller;
+use App\Models\QueueTicket;
+use App\Models\QueueType;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -21,24 +24,24 @@ class DashboardController extends Controller
             ], 404);
         }
 
-        $queueTypes = \App\Models\QueueType::where('poly_id', $staff->poly_id)
+        $queueTypes = QueueType::where('poly_id', $staff->poly_id)
             ->active()
             ->get();
 
         $dashboard = [];
         
         foreach ($queueTypes as $type) {
-            $todayQueues = \App\Models\QueueTicket::where('queue_type_id', $type->id)
+            $todayQueues = QueueTicket::where('queue_type_id', $type->id)
                 ->whereDate('service_date', today())
                 ->get();
 
             $dashboard[] = [
                 'queue_type' => $type,
                 'total_today' => $todayQueues->count(),
-                'waiting' => $todayQueues->where('status', 'WAITING')->count(),
-                'serving' => $todayQueues->where('status', 'SERVING')->count(),
-                'done' => $todayQueues->where('status', 'DONE')->count(),
-                'avg_waiting_time' => $todayQueues->where('status', '!=', 'WAITING')
+                'waiting' => $todayQueues->where('status', QueueStatus::WAITING)->count(),
+                'serving' => $todayQueues->where('status', QueueStatus::SERVING)->count(),
+                'done' => $todayQueues->where('status', QueueStatus::DONE)->count(),
+                'avg_waiting_time' => $todayQueues->where('status', '!=', QueueStatus::WAITING)
                     ->avg(function ($ticket) {
                         return $ticket->getWaitingTimeMinutes();
                     }),
