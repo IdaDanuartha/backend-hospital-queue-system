@@ -66,15 +66,15 @@ class QueueTicket extends BaseModel
     public function getWaitingTimeMinutes()
     {
         if (!$this->served_at) {
-            return now()->diffInMinutes($this->issued_at);
+            return (int) abs(now()->diffInMinutes($this->issued_at));
         }
-        return $this->served_at->diffInMinutes($this->issued_at);
+        return (int) abs($this->served_at->diffInMinutes($this->issued_at));
     }
 
     public function getServiceTimeMinutes()
     {
         if ($this->served_at && $this->finished_at) {
-            return $this->finished_at->diffInMinutes($this->served_at);
+            return (int) abs($this->finished_at->diffInMinutes($this->served_at));
         }
         return null;
     }
