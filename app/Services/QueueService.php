@@ -233,6 +233,13 @@ class QueueService
 
         $currentQueueNumber = $currentQueue?->queue_number ?? 0;
 
+        // Count only WAITING queues ahead of this ticket
+        $queuesAhead = \App\Models\QueueTicket::where('queue_type_id', $ticket->queue_type_id)
+            ->whereDate('service_date', $ticket->service_date)
+            ->where('status', \App\Enums\QueueStatus::WAITING)
+            ->where('queue_number', '<', $ticket->queue_number)
+            ->count();
+
         // === AI PREDICTION ===
         $predictor = app(\App\Services\AI\QueueWaitTimePredictor::class);
         $prediction = $predictor->predict(
@@ -245,7 +252,7 @@ class QueueService
         return [
             'ticket' => $ticket,
             'current_queue' => $currentQueue,
-            'remaining_queues' => $ticket->queue_number - $currentQueueNumber,
+            'queues_ahead' => $queuesAhead,
             'ai_prediction' => $prediction,
             // Legacy field for backward compatibility
             'estimated_waiting_minutes' => $prediction['estimated_minutes'],
