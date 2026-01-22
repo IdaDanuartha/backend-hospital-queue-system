@@ -250,6 +250,7 @@ class QueueService
         );
 
         return [
+            'token' => $publicToken->token,
             'ticket' => $ticket,
             'current_queue' => $currentQueue,
             'queues_ahead' => $queuesAhead,
