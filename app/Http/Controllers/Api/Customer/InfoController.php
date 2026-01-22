@@ -18,16 +18,26 @@ class InfoController extends Controller
     private const CACHE_TTL = 300;
 
     /**
-     * Get all polyclinics with service hours
+     * Get all polyclinics with service hours and avg service time
      * 
      * @unauthenticated
      */
     public function getPolys()
     {
-        $polys = Cache::remember('info:polys', self::CACHE_TTL, function () {
-            return Poly::active()
-                ->with('serviceHours')
-                ->get();
+        $polys = Poly::active()
+            ->with('serviceHours')
+            ->get();
+
+        // Add avg_service_time for each poly based on actual service data
+        $polys->each(function ($poly) {
+            $avgServiceTime = QueueTicket::whereHas('queueType', function ($q) use ($poly) {
+                $q->where('poly_id', $poly->id);
+            })
+                ->whereNotNull('actual_service_minutes')
+                ->where('status', \App\Enums\QueueStatus::DONE)
+                ->avg('actual_service_minutes');
+
+            $poly->avg_service_time = $avgServiceTime ? round($avgServiceTime, 1) : null;
         });
 
         return response()->json([
@@ -99,21 +109,33 @@ class InfoController extends Controller
     }
 
     /**
-     * Get total completed patients for today
+     * Get general statistics
      * 
      * @unauthenticated
      */
-    public function getTotalCompletedPatients()
+    public function getStats()
     {
-        $totalCompleted = QueueTicket::whereDate('service_date', today())
+        $todayTickets = QueueTicket::whereDate('service_date', today())->get();
+
+        $totalCompleted = $todayTickets->where('status', \App\Enums\QueueStatus::DONE)->count();
+        $totalWaiting = $todayTickets->where('status', \App\Enums\QueueStatus::WAITING)->count();
+        $totalServing = $todayTickets->where('status', \App\Enums\QueueStatus::SERVING)->count();
+
+        // Calculate average service time from actual data
+        $avgServiceTime = $todayTickets
             ->where('status', \App\Enums\QueueStatus::DONE)
-            ->count();
+            ->whereNotNull('actual_service_minutes')
+            ->avg('actual_service_minutes');
 
         return response()->json([
             'success' => true,
             'data' => [
-                'total_completed' => $totalCompleted,
                 'date' => today()->toDateString(),
+                'total_completed' => $totalCompleted,
+                'total_waiting' => $totalWaiting,
+                'total_serving' => $totalServing,
+                'total_today' => $todayTickets->count(),
+                'avg_service_time' => $avgServiceTime ? round($avgServiceTime, 1) : null,
             ],
         ]);
     }
