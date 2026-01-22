@@ -129,7 +129,7 @@ describe('Customer - Queue Management', function () {
                             'status',
                         ],
                         'current_queue',
-                        'remaining_queues',
+                        'queues_ahead',
                         'estimated_waiting_minutes',
                     ],
                 ]);
