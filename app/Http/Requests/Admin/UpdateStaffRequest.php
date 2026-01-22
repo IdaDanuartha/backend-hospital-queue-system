@@ -40,7 +40,7 @@ class UpdateStaffRequest extends BaseRequest
              * Password (opsional untuk update)
              * @example newpassword123
              */
-            'password' => 'nullable|string|min:8',
+            'password' => 'nullable|string|min:6',
 
             /**
              * ID poliklinik (UUID)

@@ -36,7 +36,7 @@ class StoreStaffRequest extends BaseRequest
              * Password (minimal 8 karakter)
              * @example password123
              */
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:6',
 
             /**
              * ID poliklinik (UUID)
