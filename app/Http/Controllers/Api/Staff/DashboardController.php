@@ -16,7 +16,7 @@ class DashboardController extends Controller
     public function index()
     {
         $staff = auth()->user()->staff;
-        
+
         if (!$staff) {
             return response()->json([
                 'success' => false,
@@ -29,11 +29,17 @@ class DashboardController extends Controller
             ->get();
 
         $dashboard = [];
-        
+
         foreach ($queueTypes as $type) {
             $todayQueues = QueueTicket::where('queue_type_id', $type->id)
                 ->whereDate('service_date', today())
                 ->get();
+
+            // Calculate average service time from actual data (DONE tickets only)
+            $avgServiceTime = $todayQueues
+                ->where('status', QueueStatus::DONE)
+                ->whereNotNull('actual_service_minutes')
+                ->avg('actual_service_minutes');
 
             $dashboard[] = [
                 'queue_type' => $type,
@@ -41,10 +47,7 @@ class DashboardController extends Controller
                 'waiting' => $todayQueues->where('status', QueueStatus::WAITING)->count(),
                 'serving' => $todayQueues->where('status', QueueStatus::SERVING)->count(),
                 'done' => $todayQueues->where('status', QueueStatus::DONE)->count(),
-                'avg_waiting_time' => $todayQueues->where('status', '!=', QueueStatus::WAITING)
-                    ->avg(function ($ticket) {
-                        return $ticket->getWaitingTimeMinutes();
-                    }),
+                'avg_service_time' => $avgServiceTime ? round($avgServiceTime, 1) : null,
             ];
         }
 

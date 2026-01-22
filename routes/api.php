@@ -52,7 +52,7 @@ Route::prefix('v1')->group(function () {
         Route::get('info/polys', [InfoController::class, 'getPolys']);
         Route::get('info/doctors', [InfoController::class, 'getDoctorSchedules']);
         Route::get('info/queue-types', [InfoController::class, 'getQueueTypes']);
-        Route::get('info/total-completed', [InfoController::class, 'getTotalCompletedPatients']);
+        Route::get('info/stats', [InfoController::class, 'getStats']);
     });
 });
 

@@ -32,7 +32,7 @@ class DashboardController extends Controller
                 'waiting' => 0,
                 'serving' => 0,
                 'done' => 0,
-                'avg_waiting_time' => 0,
+                'avg_service_time' => null,
             ];
 
             $allQueues = collect();
@@ -50,11 +50,13 @@ class DashboardController extends Controller
                 $polyData['done'] += $queues->where('status', QueueStatus::DONE)->count();
             }
 
-            // Calculate avg_waiting_time for served/done tickets
-            $polyData['avg_waiting_time'] = $allQueues->where('status', '!=', QueueStatus::WAITING)
-                ->avg(function ($ticket) {
-                    return $ticket->getWaitingTimeMinutes();
-                });
+            // Calculate avg_service_time from actual data (DONE tickets only)
+            $avgServiceTime = $allQueues
+                ->where('status', QueueStatus::DONE)
+                ->whereNotNull('actual_service_minutes')
+                ->avg('actual_service_minutes');
+
+            $polyData['avg_service_time'] = $avgServiceTime ? round($avgServiceTime, 1) : null;
 
             $dashboard[] = $polyData;
         }
