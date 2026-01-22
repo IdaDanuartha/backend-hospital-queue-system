@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\Poly;
+use App\Models\QueueTicket;
 use App\Models\QueueType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -43,16 +44,33 @@ class InfoController extends Controller
     public function getDoctorSchedules(Request $request)
     {
         $polyId = $request->poly_id;
-        $cacheKey = $polyId ? "info:doctors:poly:{$polyId}" : 'info:doctors:all';
+        $todayDayOfWeek = now()->dayOfWeekIso; // 1 = Monday, 7 = Sunday
 
-        $doctors = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($polyId) {
-            $query = Doctor::with(['poly', 'schedules']);
+        $query = Doctor::with(['poly', 'schedules']);
 
-            if ($polyId) {
-                $query->where('poly_id', $polyId);
-            }
+        if ($polyId) {
+            $query->where('poly_id', $polyId);
+        }
 
-            return $query->get();
+        $doctors = $query->get();
+
+        // Add remaining_quota for each schedule
+        $doctors->each(function ($doctor) use ($todayDayOfWeek) {
+            // Get today's ticket count for this doctor's poly
+            $todayTicketCount = QueueTicket::whereHas('queueType', function ($q) use ($doctor) {
+                $q->where('poly_id', $doctor->poly_id);
+            })
+                ->whereDate('service_date', today())
+                ->count();
+
+            $doctor->schedules->each(function ($schedule) use ($todayDayOfWeek, $todayTicketCount) {
+                // Only calculate remaining_quota for today's schedule
+                if ($schedule->day_of_week->value === $todayDayOfWeek) {
+                    $schedule->remaining_quota = max(0, $schedule->max_quota - $todayTicketCount);
+                } else {
+                    $schedule->remaining_quota = $schedule->max_quota;
+                }
+            });
         });
 
         return response()->json([
@@ -77,6 +95,26 @@ class InfoController extends Controller
         return response()->json([
             'success' => true,
             'data' => $queueTypes,
+        ]);
+    }
+
+    /**
+     * Get total completed patients for today
+     * 
+     * @unauthenticated
+     */
+    public function getTotalCompletedPatients()
+    {
+        $totalCompleted = QueueTicket::whereDate('service_date', today())
+            ->where('status', \App\Enums\QueueStatus::DONE)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_completed' => $totalCompleted,
+                'date' => today()->toDateString(),
+            ],
         ]);
     }
 }
