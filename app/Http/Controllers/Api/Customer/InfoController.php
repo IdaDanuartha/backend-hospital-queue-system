@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\QueueStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Doctor;
 use App\Models\Poly;
@@ -66,11 +67,12 @@ class InfoController extends Controller
 
         // Add remaining_quota for each schedule
         $doctors->each(function ($doctor) use ($todayDayOfWeek) {
-            // Get today's ticket count for this doctor's poly
+            // Get today's ticket count for this doctor's poly (excluding cancelled tickets)
             $todayTicketCount = QueueTicket::whereHas('queueType', function ($q) use ($doctor) {
                 $q->where('poly_id', $doctor->poly_id);
             })
                 ->whereDate('service_date', today())
+                ->where('status', '!=', QueueStatus::CANCELLED)
                 ->count();
 
             $doctor->schedules->each(function ($schedule) use ($todayDayOfWeek, $todayTicketCount) {
