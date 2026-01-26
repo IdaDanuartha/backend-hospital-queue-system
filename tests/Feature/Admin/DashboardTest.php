@@ -46,7 +46,7 @@ describe('Admin - Dashboard', function () {
                             'waiting',
                             'serving',
                             'done',
-                            'avg_waiting_time',
+                            'avg_service_time',
                         ],
                     ],
                 ])
