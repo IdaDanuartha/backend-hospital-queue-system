@@ -5,6 +5,7 @@ return [
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'https://front-end-sistem-antrian-rumah-saki.vercel.app',
+        'http://localhost:8000'
     ],
     'allowed_origins_patterns' => [
         '/^https?:\/\/localhost(:\d+)?$/',

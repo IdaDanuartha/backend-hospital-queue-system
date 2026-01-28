@@ -23,4 +23,9 @@ class Doctor extends BaseModel
     {
         return $this->hasMany(DoctorSchedule::class);
     }
+
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(QueueTicket::class, 'assigned_doctor_id');
+    }
 }
