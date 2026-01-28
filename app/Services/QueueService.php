@@ -53,8 +53,33 @@ class QueueService
 
             $displayNumber = $queueType->code_prefix . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
+            // Auto-assign doctor based on load balancing
+            $poly = $queueType->poly;
+            $today = now()->dayOfWeekIso;
+
+            // Get doctors who have schedule today for this poly
+            $availableDoctors = \App\Models\Doctor::where('poly_id', $poly->id)
+                ->whereHas('schedules', function ($query) use ($today) {
+                    $query->where('day_of_week', $today)
+                        ->where('is_active', true);
+                })
+                ->withCount([
+                    'assignedTickets' => function ($query) use ($serviceDate) {
+                        $query->where('service_date', $serviceDate)
+                            ->where('status', 'WAITING');
+                    }
+                ])
+                ->get();
+
+            $assignedDoctorId = null;
+            if ($availableDoctors->isNotEmpty()) {
+                // Find doctor with minimum waiting tickets
+                $assignedDoctorId = $availableDoctors->sortBy('assigned_tickets_count')->first()->id;
+            }
+
             $ticket = $this->queueTicketRepository->create([
                 'queue_type_id' => $queueTypeId,
+                'assigned_doctor_id' => $assignedDoctorId,
                 'service_date' => $serviceDate,
                 'queue_number' => $nextNumber,
                 'display_number' => $displayNumber,

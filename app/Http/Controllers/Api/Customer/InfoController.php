@@ -35,7 +35,7 @@ class InfoController extends Controller
                 $q->where('poly_id', $poly->id);
             })
                 ->whereNotNull('actual_service_minutes')
-                ->where('status', \App\Enums\QueueStatus::DONE)
+                ->where('status', QueueStatus::DONE)
                 ->avg('actual_service_minutes');
 
             $poly->avg_service_time = $avgServiceTime ? round($avgServiceTime, 1) : null;
@@ -68,10 +68,8 @@ class InfoController extends Controller
         // Add remaining_quota for each schedule
         $doctors->each(function ($doctor) use ($todayDayOfWeek) {
             // Get today's ticket count for this doctor's poly (excluding cancelled tickets)
-            $todayTicketCount = QueueTicket::whereHas('queueType', function ($q) use ($doctor) {
-                $q->where('poly_id', $doctor->poly_id);
-            })
-                ->whereDate('service_date', today())
+            $todayTicketCount = QueueTicket::whereDate('service_date', today())
+                ->where('assigned_doctor_id', $doctor->id)
                 ->where('status', '!=', QueueStatus::CANCELLED)
                 ->count();
 
@@ -119,13 +117,13 @@ class InfoController extends Controller
     {
         $todayTickets = QueueTicket::whereDate('service_date', today())->get();
 
-        $totalCompleted = $todayTickets->where('status', \App\Enums\QueueStatus::DONE)->count();
-        $totalWaiting = $todayTickets->where('status', \App\Enums\QueueStatus::WAITING)->count();
-        $totalServing = $todayTickets->where('status', \App\Enums\QueueStatus::SERVING)->count();
+        $totalCompleted = $todayTickets->where('status', QueueStatus::DONE)->count();
+        $totalWaiting = $todayTickets->where('status', QueueStatus::WAITING)->count();
+        $totalServing = $todayTickets->where('status', QueueStatus::SERVING)->count();
 
         // Calculate average service time from actual data
         $avgServiceTime = $todayTickets
-            ->where('status', \App\Enums\QueueStatus::DONE)
+            ->where('status', QueueStatus::DONE)
             ->whereNotNull('actual_service_minutes')
             ->avg('actual_service_minutes');
 

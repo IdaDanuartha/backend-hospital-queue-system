@@ -31,6 +31,11 @@ class QueueTicket extends BaseModel
         return $this->belongsTo(QueueType::class);
     }
 
+    public function assignedDoctor(): BelongsTo
+    {
+        return $this->belongsTo(Doctor::class, 'assigned_doctor_id');
+    }
+
     public function handledByStaff(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'handled_by_staff_id');
