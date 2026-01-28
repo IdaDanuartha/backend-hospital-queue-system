@@ -60,8 +60,7 @@ class QueueService
             // Get doctors who have schedule today for this poly
             $availableDoctors = \App\Models\Doctor::where('poly_id', $poly->id)
                 ->whereHas('schedules', function ($query) use ($today) {
-                    $query->where('day_of_week', $today)
-                        ->where('is_active', true);
+                    $query->where('day_of_week', $today);
                 })
                 ->withCount([
                     'assignedTickets' => function ($query) use ($serviceDate) {
