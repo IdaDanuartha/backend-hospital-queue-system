@@ -47,14 +47,47 @@ describe('Customer - Queue Management', function () {
             expect(QueueTicket::first()->patient_name)->toBe('John Doe');
         });
 
+        it('can take a queue number without patient name', function () {
+            $queueType = QueueType::factory()->create(['is_active' => true]);
+
+            postJson('/api/v1/customer/queue/take', [
+                'queue_type_id' => $queueType->id,
+                'phone_number' => '081234567890'
+                // patient_name is omitted (optional)
+            ])
+                ->assertStatus(201)
+                ->assertJsonStructure([
+                    'success',
+                    'message',
+                    'data' => [
+                        'ticket' => [
+                            'id',
+                            'queue_number',
+                            'status',
+                            'phone_number'
+                        ],
+                        'token',
+                    ],
+                ])
+                ->assertJson([
+                    'success' => true,
+                    'message' => 'Queue taken successfully',
+                ]);
+
+            expect(QueueTicket::count())->toBe(1);
+            expect(QueueTicket::first()->patient_name)->toBeNull();
+        });
+
         it('validates queue_type_id and phone_number', function () {
             postJson('/api/v1/customer/queue/take', [])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id', 'phone_number']);
+                ->assertJsonValidationErrors(['queue_type_id', 'phone_number'])
+                ->assertJsonMissingValidationErrors(['patient_name']); // patient_name is optional
 
             postJson('/api/v1/customer/queue/take', ['queue_type_id' => 'invalid-uuid'])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id', 'phone_number']);
+                ->assertJsonValidationErrors(['queue_type_id', 'phone_number'])
+                ->assertJsonMissingValidationErrors(['patient_name']); // patient_name is optional
         });
 
         it('fails if queue type is inactive', function () {
@@ -73,7 +106,7 @@ describe('Customer - Queue Management', function () {
                 ]);
         });
 
-        it('prevents duplicate queue for same patient and queue type per day', function () {
+        it('prevents duplicate queue for same phone number and queue type per day', function () {
             $queueType = QueueType::factory()->create(['is_active' => true]);
 
             // First queue should succeed
@@ -83,11 +116,11 @@ describe('Customer - Queue Management', function () {
                 'phone_number' => '081234567890'
             ])->assertStatus(201);
 
-            // Second queue with same patient name (case-insensitive) should fail
+            // Second queue with same phone number should fail (regardless of patient name)
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
-                'patient_name' => 'john doe',
-                'phone_number' => '081234567890'
+                'patient_name' => 'Jane Doe', // Different name
+                'phone_number' => '081234567890' // Same phone number
             ])
                 ->assertStatus(400)
                 ->assertJson([
@@ -98,7 +131,7 @@ describe('Customer - Queue Management', function () {
             expect(QueueTicket::count())->toBe(1);
         });
 
-        it('allows same patient to take different queue types', function () {
+        it('allows same phone number to take different queue types', function () {
             $queueType1 = QueueType::factory()->create(['is_active' => true]);
             $queueType2 = QueueType::factory()->create(['is_active' => true]);
 
