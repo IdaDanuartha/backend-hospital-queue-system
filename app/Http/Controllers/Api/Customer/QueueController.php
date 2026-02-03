@@ -29,6 +29,7 @@ class QueueController extends Controller
             $result = $this->queueService->takeQueue(
                 $validated['queue_type_id'],
                 $validated['patient_name'],
+                $validated['ip_address'],
                 $validated['latitude'] ?? null,
                 $validated['longitude'] ?? null
             );

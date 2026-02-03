@@ -37,6 +37,12 @@ class TakeQueueRequest extends BaseRequest
              * @example 115.23986166248717
              */
             'longitude' => 'nullable|numeric|between:-180,180',
+
+            /**
+             * Alamat IP pengguna untuk validasi duplikasi antrian
+             * @example 192.168.1.1
+             */
+            'ip_address' => 'required|ip',
         ];
     }
 
@@ -49,6 +55,8 @@ class TakeQueueRequest extends BaseRequest
             'queue_type_id.exists' => 'Jenis antrian tidak valid',
             'latitude.numeric' => 'Latitude harus berupa angka',
             'longitude.numeric' => 'Longitude harus berupa angka',
+            'ip_address.required' => 'Alamat IP harus dikirim',
+            'ip_address.ip' => 'Format alamat IP tidak valid',
         ];
     }
 }
