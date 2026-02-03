@@ -15,10 +15,16 @@ class TakeQueueRequest extends BaseRequest
     {
         return [
             /**
-             * Nama pasien
+             * Nama pasien (opsional)
              * @example John Doe
              */
-            'patient_name' => 'required|string|max:255',
+            'patient_name' => 'nullable|string|max:255',
+
+            /**
+             * Nomor telepon pasien untuk validasi duplikasi antrian
+             * @example 081234567890
+             */
+            'phone_number' => 'required|string|max:20',
 
             /**
              * ID jenis antrian (UUID)
@@ -37,26 +43,19 @@ class TakeQueueRequest extends BaseRequest
              * @example 115.23986166248717
              */
             'longitude' => 'nullable|numeric|between:-180,180',
-
-            /**
-             * Alamat IP pengguna untuk validasi duplikasi antrian
-             * @example 192.168.1.1
-             */
-            'ip_address' => 'required|ip',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'patient_name.required' => 'Nama pasien harus diisi',
             'patient_name.max' => 'Nama pasien maksimal 255 karakter',
+            'phone_number.required' => 'Nomor telepon harus diisi',
+            'phone_number.max' => 'Nomor telepon maksimal 20 karakter',
             'queue_type_id.required' => 'Jenis antrian harus dipilih',
             'queue_type_id.exists' => 'Jenis antrian tidak valid',
             'latitude.numeric' => 'Latitude harus berupa angka',
             'longitude.numeric' => 'Longitude harus berupa angka',
-            'ip_address.required' => 'Alamat IP harus dikirim',
-            'ip_address.ip' => 'Format alamat IP tidak valid',
         ];
     }
 }

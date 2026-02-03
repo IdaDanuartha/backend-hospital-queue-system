@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('queue_tickets', function (Blueprint $table) {
-            $table->string('ip_address', 45)->nullable()->after('patient_name');
-            $table->index('ip_address');
+            $table->string('phone_number', 20)->nullable()->after('patient_name');
+            $table->index('phone_number');
         });
     }
 
@@ -22,8 +22,8 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('queue_tickets', function (Blueprint $table) {
-            $table->dropIndex(['ip_address']);
-            $table->dropColumn('ip_address');
+            $table->dropIndex(['phone_number']);
+            $table->dropColumn('phone_number');
         });
     }
 };

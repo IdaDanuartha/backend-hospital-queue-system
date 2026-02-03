@@ -16,7 +16,7 @@ class QueueService
         $this->queueTicketRepository = $queueTicketRepository;
     }
 
-    public function takeQueue($queueTypeId, $patientName, $ipAddress, $latitude = null, $longitude = null)
+    public function takeQueue($queueTypeId, $patientName, $phoneNumber, $latitude = null, $longitude = null)
     {
         // Validate geofencing if enabled
         if ($this->isGeofencingEnabled()) {
@@ -30,19 +30,19 @@ class QueueService
             }
         }
 
-        return DB::transaction(function () use ($queueTypeId, $patientName, $ipAddress) {
+        return DB::transaction(function () use ($queueTypeId, $patientName, $phoneNumber) {
             $serviceDate = today();
 
-            // Check if this IP already has an active ticket for this queue type today
+            // Check if this phone number already has an active ticket for this queue type today
             // Only block if status is not DONE or CANCELLED
             $existingTicket = \App\Models\QueueTicket::where('queue_type_id', $queueTypeId)
                 ->whereDate('service_date', $serviceDate)
-                ->where('ip_address', $ipAddress)
+                ->where('phone_number', $phoneNumber)
                 ->whereNotIn('status', [QueueStatus::DONE, QueueStatus::CANCELLED])
                 ->first();
 
             if ($existingTicket) {
-                throw new \Exception('Anda sudah mengambil antrian jenis ini hari ini dan masih dalam proses');
+                throw new \Exception('Nomor telepon ini sudah mengambil antrian jenis ini hari ini dan masih dalam proses');
             }
 
             $nextNumber = $this->queueTicketRepository->getNextQueueNumber($queueTypeId, $serviceDate);
@@ -85,7 +85,7 @@ class QueueService
                 'queue_number' => $nextNumber,
                 'display_number' => $displayNumber,
                 'patient_name' => $patientName,
-                'ip_address' => $ipAddress,
+                'phone_number' => $phoneNumber,
                 'issued_at' => now(),
                 'status' => 'WAITING',
             ]);
