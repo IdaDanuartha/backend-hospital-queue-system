@@ -15,10 +15,16 @@ class TakeQueueRequest extends BaseRequest
     {
         return [
             /**
-             * Nama pasien
+             * Nama pasien (opsional)
              * @example John Doe
              */
-            'patient_name' => 'required|string|max:255',
+            'patient_name' => 'nullable|string|max:255',
+
+            /**
+             * Nomor telepon pasien untuk validasi duplikasi antrian
+             * @example 081234567890
+             */
+            'phone_number' => 'required|string|max:20',
 
             /**
              * ID jenis antrian (UUID)
@@ -43,8 +49,9 @@ class TakeQueueRequest extends BaseRequest
     public function messages(): array
     {
         return [
-            'patient_name.required' => 'Nama pasien harus diisi',
             'patient_name.max' => 'Nama pasien maksimal 255 karakter',
+            'phone_number.required' => 'Nomor telepon harus diisi',
+            'phone_number.max' => 'Nomor telepon maksimal 20 karakter',
             'queue_type_id.required' => 'Jenis antrian harus dipilih',
             'queue_type_id.exists' => 'Jenis antrian tidak valid',
             'latitude.numeric' => 'Latitude harus berupa angka',
