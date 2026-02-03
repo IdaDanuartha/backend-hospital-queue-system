@@ -47,14 +47,14 @@ describe('Customer - Queue Management', function () {
             expect(QueueTicket::first()->patient_name)->toBe('John Doe');
         });
 
-        it('validates queue_type_id and patient_name', function () {
+        it('validates queue_type_id and phone_number', function () {
             postJson('/api/v1/customer/queue/take', [])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id', 'patient_name']);
+                ->assertJsonValidationErrors(['queue_type_id', 'phone_number']);
 
             postJson('/api/v1/customer/queue/take', ['queue_type_id' => 'invalid-uuid'])
                 ->assertStatus(422)
-                ->assertJsonValidationErrors(['queue_type_id', 'patient_name']);
+                ->assertJsonValidationErrors(['queue_type_id', 'phone_number']);
         });
 
         it('fails if queue type is inactive', function () {
@@ -92,7 +92,7 @@ describe('Customer - Queue Management', function () {
                 ->assertStatus(400)
                 ->assertJson([
                     'success' => false,
-                    'message' => 'Anda sudah mengambil antrian jenis ini hari ini',
+                    'message' => 'Nomor telepon ini sudah mengambil antrian jenis ini hari ini dan masih dalam proses',
                 ]);
 
             expect(QueueTicket::count())->toBe(1);
