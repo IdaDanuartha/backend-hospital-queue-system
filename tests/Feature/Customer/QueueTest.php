@@ -65,6 +65,7 @@ describe('Customer - Queue Management', function () {
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
                 'patient_name' => 'John Doe',
+                'phone_number' => '081234567890'
             ])
                 ->assertStatus(400)
                 ->assertJson([
@@ -79,12 +80,14 @@ describe('Customer - Queue Management', function () {
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
                 'patient_name' => 'John Doe',
+                'phone_number' => '081234567890'
             ])->assertStatus(201);
 
             // Second queue with same patient name (case-insensitive) should fail
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType->id,
                 'patient_name' => 'john doe',
+                'phone_number' => '081234567890'
             ])
                 ->assertStatus(400)
                 ->assertJson([
@@ -102,11 +105,13 @@ describe('Customer - Queue Management', function () {
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType1->id,
                 'patient_name' => 'John Doe',
+                'phone_number' => '081234567890'
             ])->assertStatus(201);
 
             postJson('/api/v1/customer/queue/take', [
                 'queue_type_id' => $queueType2->id,
                 'patient_name' => 'John Doe',
+                'phone_number' => '081234567890'
             ])->assertStatus(201);
 
             expect(QueueTicket::count())->toBe(2);
